@@ -1,0 +1,174 @@
+"""All numeric constants for the FreshPrice RL environment.
+
+Source of truth: FreshPrice_SDD.md
+Do not use magic numbers inline — reference these constants.
+"""
+
+# ---------------------------------------------------------------------------
+# Episode structure
+# ---------------------------------------------------------------------------
+DAYS_PER_EPISODE: int = 7
+TICKS_PER_DAY: int = 96              # 24 hours x 4 ticks per hour (15-min resolution)
+TOTAL_TICKS: int = TICKS_PER_DAY * DAYS_PER_EPISODE  # 672
+TICK_DURATION_MINUTES: int = 15
+TICKS_PER_BRIEF: int = 8             # Brief fires every 8 ticks = every 2 simulated hours
+BRIEFS_PER_DAY: int = TICKS_PER_DAY // TICKS_PER_BRIEF  # 12
+BRIEFS_PER_EPISODE: int = DAYS_PER_EPISODE * BRIEFS_PER_DAY  # 84
+
+# ---------------------------------------------------------------------------
+# Expiry urgency thresholds (hours)
+# ---------------------------------------------------------------------------
+URGENCY_WATCH_HRS: float = 72.0       # > 72h = FRESH, 24-72h = WATCH
+URGENCY_URGENT_HRS: float = 24.0      # 6-24h = URGENT
+URGENCY_CRITICAL_HRS: float = 6.0     # <= 6h = CRITICAL
+
+# ---------------------------------------------------------------------------
+# Pricing engine (Engine 1) constants
+# ---------------------------------------------------------------------------
+PRICE_MULTIPLIER_MIN: float = 0.25
+PRICE_MULTIPLIER_MAX: float = 1.0
+FLOOR_PRICE_MARGIN: float = 0.05      # 5% above unit cost
+MAX_FLASH_SALES_PER_CATEGORY_PER_DAY: int = 1
+
+# ---------------------------------------------------------------------------
+# Reward component r1 (pricing)
+# Stored positive — reward.py applies as negative where needed.
+# ---------------------------------------------------------------------------
+R1_URGENCY_CLEARANCE_BONUS: float = 0.15     # per unit sold within 4h of expiry
+R1_NEAR_EXPIRY_HOURS: float = 4.0
+R1_EXPIRED_UNIT_PENALTY: float = 0.80        # per unit expired unsold
+R1_ANTIHACK_EARLY_DISCOUNT: float = 0.40     # price_mult < 0.35 with hours > 48
+
+# Anti-hack thresholds for pricing
+ANTIHACK_EARLY_DISCOUNT_PRICE_THRESHOLD: float = 0.35   # below this = suspicious
+ANTIHACK_EARLY_DISCOUNT_HOURS_THRESHOLD: float = 48.0   # above this = suspicious
+
+# ---------------------------------------------------------------------------
+# Farmer engine (Engine 2) constants
+# ---------------------------------------------------------------------------
+MAX_ACTIVE_FARMER_OFFERS: int = 3
+FARMER_OPS_COST_PER_KG: float = 8.0          # operational cost per kg (handling, cold chain)
+VIABILITY_SHELF_LIFE_SAFETY_FACTOR: float = 1.5  # shelf life must cover sell-through × this
+
+# ---------------------------------------------------------------------------
+# Reward component r2 (farmer)
+# Stored positive — reward.py applies as negative where needed.
+# ---------------------------------------------------------------------------
+R2_CLEARED_BATCH_BONUS: float = 0.20         # per batch fully cleared before expiry
+R2_MISSED_OPPORTUNITY_PENALTY: float = 0.50   # declined offer with viability > 0.70
+R2_MISSED_OPPORTUNITY_VIABILITY_THRESHOLD: float = 0.70
+R2_RECKLESS_ACCEPT_PENALTY: float = 0.60     # accepted with viability < 0.30
+ANTIHACK_RECKLESS_ACCEPT_VIABILITY_MAX: float = 0.30
+
+# ---------------------------------------------------------------------------
+# Trend engine (Engine 3) constants
+# ---------------------------------------------------------------------------
+TREND_SCORE_THRESHOLD: float = 65.0
+ANTIHACK_TREND_ORDER_VELOCITY_MULTIPLIER: float = 2.0  # hard cap at 2x weekly velocity
+TREND_COOLDOWN_HRS: float = 72.0          # same category cannot trigger again for 72h
+TREND_SIGNAL_EXPIRY_HRS: float = 48.0
+
+# Composite score weights (from SDD Section 03 TrendSignal entity)
+TREND_WEIGHT_RECIPE_SIMPLICITY: float = 0.25
+TREND_WEIGHT_INGREDIENT_RARITY: float = 0.30
+TREND_WEIGHT_VIEW_VELOCITY: float = 0.25
+TREND_WEIGHT_LOCAL_RELEVANCE: float = 0.10
+TREND_WEIGHT_HISTORICAL_CONVERSION: float = 0.10
+
+# ---------------------------------------------------------------------------
+# Reward component r3 (trend)
+# ---------------------------------------------------------------------------
+R3_PERFECT_TIMING_BONUS: float = 0.25         # trend stock sold at full price
+R3_OVERTRADE_PENALTY: float = 0.30            # trend stock requires > 40% discount
+R3_OVERTRADE_DISCOUNT_THRESHOLD: float = 0.40
+
+# ---------------------------------------------------------------------------
+# WRR (unified metric)
+# ---------------------------------------------------------------------------
+# WRR = revenue_recovered_from_atrisk / cost_of_atrisk_inventory
+# at_risk = all batches that were URGENT or CRITICAL at any point this episode
+
+# ---------------------------------------------------------------------------
+# Reward weights for WRR components (used in WRRRewardEngine)
+# ---------------------------------------------------------------------------
+WRR_WEIGHT_R1: float = 0.40
+WRR_WEIGHT_R2: float = 0.30
+WRR_WEIGHT_R3: float = 0.30
+
+# ---------------------------------------------------------------------------
+# Risk buffer
+# ---------------------------------------------------------------------------
+RISK_BUFFER_INITIAL_SEED_RS: float = 5000.0
+RISK_BUFFER_PROFIT_CONTRIBUTION_PCT: float = 0.05  # 5% of each profitable farmer batch
+
+# ---------------------------------------------------------------------------
+# Notification credits
+# ---------------------------------------------------------------------------
+NOTIFICATION_CREDITS_PER_CATEGORY_PER_DAY: int = 3
+
+# ---------------------------------------------------------------------------
+# Curriculum promotion
+# ---------------------------------------------------------------------------
+CURRICULUM_PROMOTION_WRR_THRESHOLD: float = 0.70
+CURRICULUM_PROMOTION_WINDOW: int = 5          # consecutive eval episodes
+
+# ---------------------------------------------------------------------------
+# Brief quality scoring weights
+# ---------------------------------------------------------------------------
+BRIEF_QUALITY_WEIGHT_SITUATION: float = 1.0 / 3.0
+BRIEF_QUALITY_WEIGHT_VIABILITY: float = 1.0 / 3.0
+BRIEF_QUALITY_WEIGHT_DIRECTIVE: float = 1.0 / 3.0
+
+# ---------------------------------------------------------------------------
+# Model save & eval
+# ---------------------------------------------------------------------------
+EVAL_EPISODES_AFTER_SAVE: int = 5
+SAVE_WRR_DEGRADATION_TOLERANCE: float = 0.03  # 3%
+
+# ---------------------------------------------------------------------------
+# LLM generation parameters
+# ---------------------------------------------------------------------------
+LLM_MAX_NEW_TOKENS: int = 800
+LLM_TEMPERATURE: float = 0.3
+LLM_TIMEOUT_SECONDS: int = 40
+
+# ---------------------------------------------------------------------------
+# Simulation defaults (for market state initialization)
+# ---------------------------------------------------------------------------
+DEFAULT_CATEGORIES: list[str] = [
+    "fruits",
+    "vegetables",
+    "dairy",
+    "mushrooms",
+    "leafy_greens",
+    "herbs",
+]
+
+# Shelf life ranges per category (hours)
+CATEGORY_SHELF_LIFE: dict[str, tuple[float, float]] = {
+    "fruits": (48.0, 120.0),
+    "vegetables": (36.0, 96.0),
+    "dairy": (72.0, 168.0),
+    "mushrooms": (24.0, 72.0),
+    "leafy_greens": (18.0, 48.0),
+    "herbs": (24.0, 72.0),
+}
+
+# Base demand velocity (units/hour) per category
+CATEGORY_BASE_VELOCITY: dict[str, float] = {
+    "fruits": 3.0,
+    "vegetables": 2.5,
+    "dairy": 4.0,
+    "mushrooms": 1.5,
+    "leafy_greens": 2.0,
+    "herbs": 1.0,
+}
+
+# Weekend demand multiplier
+WEEKEND_DEMAND_MULTIPLIER: float = 1.5
+
+# Festival day demand spike multiplier
+FESTIVAL_DEMAND_MULTIPLIER: float = 2.5
+
+# Supplier delay: reduces incoming stock by this fraction
+SUPPLIER_DELAY_STOCK_FRACTION: float = 0.3

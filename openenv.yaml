@@ -1,0 +1,66 @@
+name: qstoreprice-ai
+version: "1.0.0"
+description: >
+  Perishable goods intelligence environment for training LLMs to make
+  pricing, procurement, and trend-detection decisions for a small online
+  grocery. The agent writes structured Operating Briefs every 2 simulated
+  hours. A rule executor converts the DIRECTIVE section to actions.
+  Unified metric: Weekly Waste Recovery Rate (WRR).
+
+author: "QStorePrice Team"
+license: MIT
+
+environment:
+  class: freshprice_env.freshprice_env.FreshPriceEnv
+  entry_point: freshprice_env.freshprice_env:FreshPriceEnv
+
+observation_space:
+  type: Text
+  max_length: 16384
+  description: >
+    Structured prompt string describing current inventory state, expiry
+    urgency, active signals, and task instructions for the Operating Brief.
+
+action_space:
+  type: Text
+  max_length: 4096
+  description: >
+    Raw Operating Brief text with 6 sections: SITUATION, SIGNAL ANALYSIS,
+    VIABILITY CHECK, RECOMMENDATION, DIRECTIVE (JSON), CONFIDENCE.
+
+reward:
+  type: float
+  range: [-inf, 1.0]
+  description: >
+    Partial WRR delta per brief cycle. Episode reward is the final
+    Weekly Waste Recovery Rate from the accumulator.
+
+engines:
+  - name: Dynamic Pricing
+    description: Auto-discount items as expiry approaches
+    reward_component: r1_pricing
+  - name: Farmer Offer Engine
+    description: Accept/counter/decline surplus procurement with risk management
+    reward_component: r2_farmer
+  - name: Social Trend Engine
+    description: Detect viral signals, restock before demand arrives
+    reward_component: r3_trend
+
+curriculum:
+  levels: 5
+  scenarios:
+    - STABLE_WEEK
+    - BUSY_WEEKEND
+    - FARMER_WEEK
+    - TREND_WEEK
+    - CRISIS_WEEK
+  promotion_threshold: 0.70
+  promotion_window: 5
+
+tags:
+  - perishable-goods
+  - quick-commerce
+  - multi-engine
+  - operating-brief
+  - curriculum-learning
+  - wrr

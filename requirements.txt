@@ -1,0 +1,38 @@
+# QStorePrice AI — Perishable Goods Intelligence
+# Python 3.11+ required
+#
+# Install Unsloth separately before other packages:
+#   pip install "unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git"
+# Then install everything else:
+#   pip install -r requirements.txt
+
+# ── CORE RL + LLM ─────────────────────────────────────────────────
+torch==2.2.1
+transformers==4.40.0
+trl==0.8.6
+peft==0.10.0
+# unsloth==2024.4          # Installed separately — see instructions above
+accelerate==0.29.3
+bitsandbytes==0.43.1
+datasets==2.19.0
+tokenizers==0.19.1
+
+# ── ENVIRONMENT ───────────────────────────────────────────────────
+gymnasium==0.29.1
+# openenv==0.1.0           # Install from: pip install openenv
+
+# ── EXPERIMENT TRACKING ───────────────────────────────────────────
+wandb==0.16.6
+
+# ── UTILITIES ─────────────────────────────────────────────────────
+numpy==1.26.4
+pandas==2.2.1
+scipy==1.13.0
+tqdm==4.66.2
+python-dotenv==1.0.1
+
+# ── DEVELOPMENT + TESTING ─────────────────────────────────────────
+pytest==8.1.0
+pytest-asyncio==0.23.6
+ruff==0.4.1
+mypy==1.9.0
