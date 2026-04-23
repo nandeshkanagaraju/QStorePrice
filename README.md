@@ -81,7 +81,8 @@ eval/                              # Evaluation
   evaluator.py                     # Runs held-out episodes, prints reports
   anti_hack_checker.py             # Scans trajectories for reward hacking
 
-requirements.txt                   # Pinned dependencies
+requirements.txt                   # HF Space dependencies (gradio, matplotlib, gymnasium)
+requirements_training.txt          # Full training dependencies (torch, trl, unsloth, etc.)
 README.md                          # This file
 ```
 
@@ -91,7 +92,7 @@ README.md                          # This file
 
 ```bash
 pip install "unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git"
-pip install -r requirements.txt
+pip install -r requirements_training.txt
 ```
 
 ### 2. Verify the environment

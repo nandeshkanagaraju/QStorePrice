@@ -15,7 +15,7 @@ QStorePrice AI is a perishable goods intelligence platform. An RL-trained LLM (Q
 ```bash
 # Install
 pip install "unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git"
-pip install -r requirements.txt
+pip install -r requirements_training.txt
 
 # Verify environment
 python -c "from freshprice_env.freshprice_env import FreshPriceEnv; env = FreshPriceEnv(); env.reset()"
