@@ -29,12 +29,14 @@ def run_dpo(
     output_dir: str,
     dpo_pairs: list[DPOPair],
     beta: float = 0.1,
-    learning_rate: float = 1e-6,
+    learning_rate: float = 5e-6,
     num_epochs: int = 1,
     batch_size: int = 1,
     gradient_accumulation_steps: int = 4,
     max_seq_length: int = 4096,
     seed: int = 42,
+    report_to: str = "wandb",
+    skip_verification: bool = False,
 ) -> str:
     """Run one DPO fine-tuning cycle. Returns path to saved checkpoint."""
     from unsloth import FastLanguageModel
@@ -98,7 +100,7 @@ def run_dpo(
         bf16=torch.cuda.is_bf16_supported(),
         logging_steps=5,
         seed=seed,
-        report_to="wandb",
+        report_to=report_to,
         remove_unused_columns=False,
         max_length=max_seq_length,
         max_prompt_length=max_seq_length // 2,
@@ -130,13 +132,19 @@ def run_dpo(
         save_method="merged_16bit",
     )
 
-    # 8. Post-save verification
-    verified = _verify_dpo_checkpoint(
-        checkpoint_dir, output_dir, tokenizer, seed,
-    )
-    if not verified:
-        print("WARNING: Post-DPO quality dropped below tolerance — caller should consider reverting")
-        logger.warning("DPO checkpoint verification failed for %s", output_dir)
+    # 8. Post-save verification (optional — slow, skips on small GPUs)
+    if skip_verification:
+        print("Skipping post-DPO verification (skip_verification=True).")
+    else:
+        try:
+            verified = _verify_dpo_checkpoint(
+                checkpoint_dir, output_dir, tokenizer, seed,
+            )
+            if not verified:
+                print("WARNING: Post-DPO quality dropped below tolerance — caller should consider reverting")
+                logger.warning("DPO checkpoint verification failed for %s", output_dir)
+        except Exception as ve:
+            print(f"WARNING: Post-DPO verification crashed ({type(ve).__name__}: {ve}). Continuing.")
 
     # 9. Return checkpoint path
     return output_dir

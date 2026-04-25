@@ -10,9 +10,20 @@ hackathon (PDF page 41):
     WS   /ws       - persistent session used by the async client
     GET  /docs     - OpenAPI documentation
 
-The server itself is built by openenv-core's `create_fastapi_app` so that we
-inherit the standard request/response schemas and don't reinvent the wheel
-(hackathon non-negotiable: "Build on top of the framework").
+Plus admin / dashboard endpoints (additive — do not affect the OpenEnv
+contract):
+
+    GET  /admin/dashboard            - live metrics snapshot (JSON)
+    GET  /admin/metrics/scores       - flat list of episode records
+    GET  /admin/metrics/reward-curve - flat list of step records
+    GET  /admin/tasks                - curriculum scenario list
+    POST /admin/metrics/reset        - clear in-memory metrics
+    GET  /                           - HTML dashboard (when static/ present)
+
+The OpenEnv app is built by openenv-core's `create_fastapi_app` so that we
+inherit the standard request/response schemas. If openenv-core is missing
+(common in dev environments), the server falls back to a plain FastAPI app
+with /health so the dashboard still works.
 
 Run:
 
@@ -26,24 +37,95 @@ Run:
 from __future__ import annotations
 
 import os
+from pathlib import Path
 
 try:
     from openenv.core.env_server import create_fastapi_app
-except ImportError as exc:
-    raise ImportError(
-        "openenv-core is not installed. Run: pip install openenv-core"
-    ) from exc
+    _OPENENV_AVAILABLE = True
+except ImportError:
+    _OPENENV_AVAILABLE = False
+    create_fastapi_app = None  # type: ignore[assignment]
 
-from server.environment import BriefAction, BriefObservation, FreshPriceOpenEnv
 
-# create_fastapi_app takes a factory callable (not an instance) so that the
-# session layer can construct per-session envs, plus explicit Action/Observation
-# types for request/response schema generation.
-app = create_fastapi_app(
-    env=FreshPriceOpenEnv,
-    action_cls=BriefAction,
-    observation_cls=BriefObservation,
-)
+def _build_app():
+    """Build the FastAPI app — falls back to a plain FastAPI() if openenv-core
+    is missing so the dashboard still works in dev environments."""
+    if _OPENENV_AVAILABLE:
+        from server.environment import BriefAction, BriefObservation, FreshPriceOpenEnv
+        return create_fastapi_app(
+            env=FreshPriceOpenEnv,
+            action_cls=BriefAction,
+            observation_cls=BriefObservation,
+        )
+
+    from fastapi import FastAPI
+    fallback = FastAPI(title="QStorePrice (fallback - openenv-core missing)")
+
+    @fallback.get("/health")
+    def _health():
+        return {"status": "ok", "openenv_core": False}
+
+    return fallback
+
+
+app = _build_app()
+
+
+# ---------------------------------------------------------------------------
+# Admin / dashboard endpoints (additive — do not change OpenEnv contract)
+# ---------------------------------------------------------------------------
+
+from freshprice_env.enums import CurriculumScenario  # noqa: E402
+from freshprice_env.monitoring import metrics  # noqa: E402
+
+
+@app.get("/admin/dashboard", tags=["Admin"])
+def admin_dashboard():
+    """Full metrics snapshot — feeds the live HTML dashboard."""
+    return metrics.get_dashboard()
+
+
+@app.get("/admin/metrics/scores", tags=["Admin"])
+def admin_metrics_scores(scenario: str | None = None):
+    return {"episodes": metrics.get_episode_scores(scenario=scenario)}
+
+
+@app.get("/admin/metrics/reward-curve", tags=["Admin"])
+def admin_metrics_reward_curve(scenario: str | None = None):
+    return {"steps": metrics.get_reward_curve(scenario=scenario)}
+
+
+@app.get("/admin/tasks", tags=["Admin"])
+def admin_tasks():
+    """Curriculum scenarios available to the environment."""
+    return {
+        "tasks": [
+            {"level": s.value, "name": s.name}
+            for s in CurriculumScenario
+        ]
+    }
+
+
+@app.post("/admin/metrics/reset", tags=["Admin"])
+def admin_metrics_reset():
+    metrics.reset()
+    return {"status": "reset"}
+
+
+# ---------------------------------------------------------------------------
+# Static dashboard (optional)
+# ---------------------------------------------------------------------------
+
+_STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
+if _STATIC_DIR.is_dir():
+    from fastapi.staticfiles import StaticFiles  # noqa: E402
+    from fastapi.responses import FileResponse  # noqa: E402
+
+    app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
+
+    @app.get("/", include_in_schema=False)
+    def dashboard_index():
+        return FileResponse(str(_STATIC_DIR / "index.html"))
 
 
 def main() -> None:

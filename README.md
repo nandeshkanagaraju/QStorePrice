@@ -238,6 +238,38 @@ print(obs[:200])
 
 Endpoints: `GET /health` · `POST /reset` · `POST /step` · `GET /state` · `WS /ws` · `GET /docs`
 
+### Live Dashboard & Admin Endpoints
+
+The server also serves a polling HTML dashboard at `/` with admin JSON endpoints:
+
+- `GET /` — live dashboard (KPIs, per-scenario WRR bars, reward curve, recent episodes)
+- `GET /admin/dashboard` — full metrics snapshot (JSON)
+- `GET /admin/metrics/scores` — per-episode records, optionally `?scenario=STABLE_WEEK`
+- `GET /admin/metrics/reward-curve` — per-step reward records
+- `GET /admin/tasks` — curriculum scenario list
+- `POST /admin/metrics/reset` — clear in-memory metrics
+
+Metrics are populated by the GRPO rollout cell and the evaluation cell in
+[`kaggle_qstoreprice.ipynb`](kaggle_qstoreprice.ipynb), or by any code that
+calls `freshprice_env.monitoring.metrics.record_step` /
+`record_episode`.
+
+### Submission Validation
+
+```bash
+python validate_submission.py
+```
+
+Runs ~24 checks: openenv.yaml schema, module imports, env reset across all
+five `CurriculumScenario`s, server admin routes, static files, SFT generator
+sanity. Exit code 0 = ready to submit.
+
+### Tests
+
+```bash
+python -m unittest tests.test_env -v
+```
+
 ## Training Scenarios
 
 | Level | Scenario | Engines Active | Promotion |
