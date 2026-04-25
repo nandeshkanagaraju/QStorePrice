@@ -38,6 +38,7 @@ R1_URGENCY_CLEARANCE_BONUS: float = 0.15     # per unit sold within 4h of expiry
 R1_NEAR_EXPIRY_HOURS: float = 4.0
 R1_EXPIRED_UNIT_PENALTY: float = 0.80        # per unit expired unsold
 R1_ANTIHACK_EARLY_DISCOUNT: float = 0.40     # price_mult < 0.35 with hours > 48
+R1_ANTIHACK_BELOW_FLOOR: float = 0.40        # proposed price < floor_price
 
 # Anti-hack thresholds for pricing
 ANTIHACK_EARLY_DISCOUNT_PRICE_THRESHOLD: float = 0.35   # below this = suspicious

@@ -19,7 +19,8 @@ tokenizers==0.19.1
 
 # ── ENVIRONMENT ───────────────────────────────────────────────────
 gymnasium==0.29.1
-# openenv==0.1.0           # Install from: pip install openenv
+openenv-core>=0.2.0
+pydantic>=2.0.0
 
 # ── EXPERIMENT TRACKING ───────────────────────────────────────────
 wandb==0.16.6

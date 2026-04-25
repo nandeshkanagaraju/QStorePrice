@@ -85,10 +85,12 @@ class BriefValidator:
 
         actions = directive.get("actions", [])
 
-        # Must have at least one action
+        # Empty actions = legitimate "hold all prices" decision (parity with
+        # FARMER/TREND validators). Warn instead of erroring so the brief
+        # proceeds and gets quality-scored rather than falling back.
         if not actions:
-            errors.append("Directive has no actions")
-            return ValidationResult(valid=False, warnings=warnings, errors=errors)
+            warnings.append("Directive has no actions — interpreting as hold-all-prices")
+            return ValidationResult(valid=True, warnings=warnings, errors=errors)
 
         # Build batch lookup
         batch_ids = {

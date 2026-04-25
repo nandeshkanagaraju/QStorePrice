@@ -4,3 +4,4 @@ gymnasium>=0.29.1
 numpy>=1.26.0
 openai>=1.0.0
 pydantic>=2.0.0
+openenv-core>=0.2.0

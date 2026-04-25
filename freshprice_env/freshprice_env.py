@@ -182,6 +182,10 @@ class FreshPriceEnv(gym.Env):
         Returns:
             (next_observation, reward, terminated, truncated, info)
         """
+        # Keep state.tick synchronised so engines see correct hour_of_day / day_of_week
+        # and validators see correct expiry windows.
+        self._state.tick = self._current_tick
+
         info: dict = {
             "tick": self._current_tick,
             "engine_type": self._last_engine_type.value if self._last_engine_type else "PRICING",
@@ -244,6 +248,11 @@ class FreshPriceEnv(gym.Env):
                     self._current_tick, "PRICING", "EARLY_DISCOUNT",
                     f"batch={pa.batch_id} price={pa.new_price:.2f}",
                 )
+            if pa.was_below_floor:
+                self._reward_engine.record_antihack_violation(
+                    self._current_tick, "PRICING", "BELOW_FLOOR",
+                    f"batch={pa.batch_id} clamped_to={pa.new_price:.2f}",
+                )
 
         for fa in execution.farmer_actions:
             if fa.was_antihack_blocked:
@@ -273,6 +282,9 @@ class FreshPriceEnv(gym.Env):
         for i in range(self.brief_interval_ticks):
             tick = self._current_tick
             is_first_tick = (i == 0)
+
+            # Advance simulated time so engines see the right hour/day this tick
+            self._state.tick = tick
 
             r2_action = 0.0
             r3_action = 0.0

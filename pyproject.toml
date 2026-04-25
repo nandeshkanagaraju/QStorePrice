@@ -1,0 +1,93 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "qstoreprice-env"
+version = "1.1.0"
+description = "QStorePrice: Perishable goods intelligence environment for OpenEnv. An LLM writes Operating Briefs that drive pricing, farmer offer, and trend engines for a quick-commerce grocery store. Unified metric: Weekly Waste Recovery Rate (WRR)."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "QStorePrice Team" }]
+keywords = [
+    "openenv",
+    "reinforcement-learning",
+    "llm",
+    "perishable-goods",
+    "quick-commerce",
+    "operating-brief",
+    "curriculum-learning",
+    "grpo",
+    "dpo",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    "openenv-core>=0.2.0",
+    "gymnasium>=0.29.1",
+    "numpy>=1.26.0",
+    "pydantic>=2.0.0",
+    "fastapi>=0.110.0",
+    "uvicorn>=0.27.0",
+]
+
+[project.optional-dependencies]
+demo = [
+    "gradio>=4.0",
+    "matplotlib>=3.7",
+    "openai>=1.0.0",
+]
+training = [
+    "torch>=2.1.0",
+    "transformers>=4.45.0",
+    "trl>=0.11.0",
+    "peft>=0.13.0",
+    "accelerate>=0.34.0",
+    "datasets>=2.21.0",
+    "wandb>=0.18.0",
+]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
+    "mypy>=1.10",
+]
+
+[project.urls]
+Homepage = "https://github.com/nandeshkanagaraju/QStorePrice"
+Repository = "https://github.com/nandeshkanagaraju/QStorePrice"
+
+[project.scripts]
+qstoreprice-server = "server.app:main"
+
+[tool.setuptools]
+include-package-data = true
+py-modules = ["models", "client"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = [
+    "freshprice_env*",
+    "server*",
+]
+exclude = ["training*", "eval*", "tests*", "scripts*", "checkpoints*"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true

@@ -16,6 +16,7 @@ from freshprice_env.constants import (
     ANTIHACK_EARLY_DISCOUNT_PRICE_THRESHOLD,
     PRICE_MULTIPLIER_MIN,
     PRICE_MULTIPLIER_MAX,
+    R1_ANTIHACK_BELOW_FLOOR,
     R1_ANTIHACK_EARLY_DISCOUNT,
     R1_EXPIRED_UNIT_PENALTY,
     R1_NEAR_EXPIRY_HOURS,
@@ -71,13 +72,15 @@ class PricingEngine:
             if b.status == BatchStatus.ACTIVE
         )
 
-        # Track anti-hack violations this tick
-        antihack_violations = 0
+        # Track anti-hack violations this tick (split by type for r1 penalty math)
+        early_discount_violations = 0
+        below_floor_violations = 0
 
         # 1. Apply directive prices
         if directive is not None:
-            state, violations = self._apply_directive(state, directive)
-            antihack_violations += violations
+            state, ed_v, bf_v = self._apply_directive(state, directive)
+            early_discount_violations += ed_v
+            below_floor_violations += bf_v
 
         # 2. Compute sales
         state, revenue_this_tick, near_expiry_units_sold = self._compute_sales(state)
@@ -93,7 +96,8 @@ class PricingEngine:
             revenue_this_tick=revenue_this_tick,
             max_possible_revenue=max_possible_revenue,
             expired_batches=newly_expired,
-            antihack_violations=antihack_violations,
+            early_discount_violations=early_discount_violations,
+            below_floor_violations=below_floor_violations,
             near_expiry_units_sold=near_expiry_units_sold,
         )
 
@@ -107,15 +111,15 @@ class PricingEngine:
         self,
         state: SimulatedMarketState,
         directive: dict,
-    ) -> tuple[SimulatedMarketState, int]:
+    ) -> tuple[SimulatedMarketState, int, int]:
         """Apply PRICING directive to batch prices.
 
         Returns:
-            (updated_state, antihack_violation_count)
+            (updated_state, early_discount_violation_count, below_floor_violation_count)
         """
         actions = directive.get("actions", [])
         if not actions:
-            return state, 0
+            return state, 0, 0
 
         # Index batches by id for fast lookup
         batch_map: dict[str, int] = {
@@ -123,7 +127,8 @@ class PricingEngine:
         }
 
         updated_batches = list(state.batches)
-        antihack_violations = 0
+        early_discount_violations = 0
+        below_floor_violations = 0
 
         for action in actions:
             batch_id = action.get("batch_id")
@@ -152,7 +157,7 @@ class PricingEngine:
                     "(multiplier=%.2f, hours_remaining=%.1f)",
                     batch_id, price_multiplier, batch.hours_to_expiry,
                 )
-                antihack_violations += 1
+                early_discount_violations += 1
                 # Do NOT apply the price — keep current price
                 continue
 
@@ -176,18 +181,26 @@ class PricingEngine:
             # Normal price update
             new_price = batch.original_price * price_multiplier
 
-            # Floor price enforcement
-            if new_price < batch.floor_price:
+            # Anti-hack guard: below-floor price (SDD Section 06 BELOW_FLOOR_PRICE).
+            # 1-cent tolerance avoids spurious flags when a directive round-trips
+            # through rule_executor — float-point math (floor / original × original)
+            # can land 1 ULP under floor without any actual violation.
+            if new_price < batch.floor_price - 0.01:
                 logger.warning(
-                    "Price %.2f below floor %.2f for %s — clamping to floor",
-                    new_price, batch.floor_price, batch_id,
+                    "Anti-hack: below-floor price for %s "
+                    "(proposed=%.2f, floor=%.2f) — clamping",
+                    batch_id, new_price, batch.floor_price,
                 )
+                below_floor_violations += 1
+                new_price = batch.floor_price
+            elif new_price < batch.floor_price:
+                # Within tolerance — clamp silently
                 new_price = batch.floor_price
 
             updated_batches[idx] = replace(batch, current_price=round(new_price, 2))
 
         state.batches = updated_batches
-        return state, antihack_violations
+        return state, early_discount_violations, below_floor_violations
 
     # ------------------------------------------------------------------
     # Step 2: Compute sales
@@ -228,11 +241,16 @@ class PricingEngine:
             noise = self.rng.uniform(0.85, 1.15)
             effective_velocity = adjusted_velocity * noise
 
-            # Units sold this tick
-            units_sold = min(
-                batch.quantity_remaining,
-                int(effective_velocity * TICK_DURATION_HOURS),
-            )
+            # Units sold this tick — probabilistic rounding so fractional units
+            # don't truncate to zero. Without this, low-velocity categories
+            # (anything with base_velocity × time_mult × 0.25 < 1) would never
+            # sell at full price and the agent could not learn pricing dynamics.
+            expected_units = effective_velocity * TICK_DURATION_HOURS
+            whole = int(expected_units)
+            frac = expected_units - whole
+            if self.rng.random() < frac:
+                whole += 1
+            units_sold = min(batch.quantity_remaining, whole)
 
             if units_sold > 0:
                 revenue = units_sold * batch.current_price
@@ -341,7 +359,8 @@ class PricingEngine:
         revenue_this_tick: float,
         max_possible_revenue: float,
         expired_batches: list[SimulatedBatch],
-        antihack_violations: int,
+        early_discount_violations: int,
+        below_floor_violations: int,
         near_expiry_units_sold: int,
     ) -> float:
         """Compute the r1 pricing reward component.
@@ -349,7 +368,8 @@ class PricingEngine:
         r1 = revenue_this_tick / max_possible_revenue  (base ratio)
            + R1_URGENCY_CLEARANCE_BONUS per near-expiry unit sold
            - R1_EXPIRED_UNIT_PENALTY per expired unit
-           - R1_ANTIHACK_EARLY_DISCOUNT per anti-hack violation
+           - R1_ANTIHACK_EARLY_DISCOUNT per early-discount violation
+           - R1_ANTIHACK_BELOW_FLOOR per below-floor violation
 
         r1 is NOT clamped — negative values are valid learning signals.
         """
@@ -366,7 +386,8 @@ class PricingEngine:
         total_expired_units = sum(b.quantity_remaining for b in expired_batches)
         r1 -= R1_EXPIRED_UNIT_PENALTY * total_expired_units
 
-        # Penalty: anti-hack violations
-        r1 -= R1_ANTIHACK_EARLY_DISCOUNT * antihack_violations
+        # Penalty: anti-hack violations (split by type per SDD Section 06)
+        r1 -= R1_ANTIHACK_EARLY_DISCOUNT * early_discount_violations
+        r1 -= R1_ANTIHACK_BELOW_FLOOR * below_floor_violations
 
         return r1

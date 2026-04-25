@@ -39,6 +39,7 @@ class PricingAction:
     bundle_with: str | None
     was_clamped: bool              # True if price was clamped to floor or ceiling
     was_antihack_blocked: bool     # True if anti-hack guard rejected the price
+    was_below_floor: bool = False  # True if proposed price was below floor (clamped + flagged)
 
 
 @dataclass
@@ -152,10 +153,17 @@ class RuleExecutor:
             # Compute new price
             new_price = batch.original_price * pm
 
-            # Floor price enforcement
+            # Floor price enforcement — flag below-floor as anti-hack
+            # (SDD Section 06 AntiHackGuard.check: BELOW_FLOOR_PRICE)
+            was_below_floor = False
             if new_price < batch.floor_price:
-                new_price = batch.floor_price
+                was_below_floor = True
                 was_clamped = True
+                warnings.append(
+                    f"Below-floor price blocked for {bid}: "
+                    f"proposed {new_price:.2f} < floor {batch.floor_price:.2f}"
+                )
+                new_price = batch.floor_price
 
             # Anti-hack check
             was_antihack_blocked = False
@@ -177,6 +185,7 @@ class RuleExecutor:
                 bundle_with=bundle_with,
                 was_clamped=was_clamped,
                 was_antihack_blocked=was_antihack_blocked,
+                was_below_floor=was_below_floor,
             ))
 
         return actions, warnings
