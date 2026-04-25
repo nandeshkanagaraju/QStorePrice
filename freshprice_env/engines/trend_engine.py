@@ -71,27 +71,21 @@ class TrendEngine:
         self,
         state: SimulatedMarketState,
     ) -> SimulatedMarketState:
-        """Boost sales velocity for categories with active approved trend signals.
+        """Write per-category demand multipliers for approved trend signals.
 
         Called every tick by the environment BEFORE pricing_engine.tick().
-        Modifies state.sales_velocity in place — PricingEngine reads it
-        during _compute_sales.
+        Stores boosts in state.category_demand_boosts which PricingEngine
+        reads during _compute_sales — avoids corrupting the reported
+        sales_velocity telemetry dict.
         """
+        state.category_demand_boosts.clear()
         for category, signal in state.trend_signals.items():
             if signal.action_taken != TrendAction.APPROVED:
                 continue
-
-            # Boost factor: 1.0 at threshold, scales up with score
-            boost = 1.0 + (signal.composite_score - TREND_SCORE_THRESHOLD) / 100.0
-
-            for batch in state.batches:
-                if (
-                    batch.category == category
-                    and batch.status == BatchStatus.ACTIVE
-                    and batch.batch_id in state.sales_velocity
-                ):
-                    state.sales_velocity[batch.batch_id] *= boost
-
+            # Boost factor: 1.0 at threshold, scales up linearly with score
+            state.category_demand_boosts[category] = (
+                1.0 + (signal.composite_score - TREND_SCORE_THRESHOLD) / 100.0
+            )
         return state
 
     # ------------------------------------------------------------------

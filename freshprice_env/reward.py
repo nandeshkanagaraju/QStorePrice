@@ -227,7 +227,7 @@ class WRRRewardEngine:
         """Check for repeated trend orders in the same category within a tick window."""
         trend_orders = [
             v for v in self._antihack_violations
-            if v["engine"] == "TREND" and v["violation_type"] == "ORDER_PLACED"
+            if v["engine"] == "TREND" and v["violation_type"] == "ORDER_CAP"
         ]
         if not trend_orders:
             # Also check from non-violation trend orders tracked in r3 history

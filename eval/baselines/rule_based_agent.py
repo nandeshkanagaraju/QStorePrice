@@ -82,16 +82,12 @@ class RuleBasedAgent:
         directive = json.dumps({"engine": "PRICING", "actions": actions})
 
         return (
-            "## SITUATION\n"
-            "Inventory scanned for urgency levels.\n\n"
-            "## SIGNAL ANALYSIS\n"
-            "Applying urgency-tier discount rules: CRITICAL=50%, URGENT=30%, WATCH=10%.\n\n"
-            "## VIABILITY CHECK\n"
-            "All discounts applied above floor price (1.05× cost).\n\n"
-            "## RECOMMENDATION\n"
-            "Apply tier-based discounts. Flash sale for CRITICAL items.\n\n"
-            f"## DIRECTIVE\n{directive}\n\n"
-            "## CONFIDENCE\nHIGH"
+            "SITUATION: Inventory scanned for urgency levels.\n"
+            "SIGNAL ANALYSIS: N/A\n"
+            "VIABILITY CHECK: All discounts applied above floor price (1.05x cost).\n"
+            "RECOMMENDATION: Apply tier-based discounts. Flash sale for CRITICAL items.\n"
+            f"DIRECTIVE: {directive}\n"
+            "CONFIDENCE: HIGH"
         )
 
     # ------------------------------------------------------------------
@@ -142,16 +138,12 @@ class RuleBasedAgent:
         directive = json.dumps({"engine": "FARMER", "actions": actions})
 
         return (
-            "## SITUATION\n"
-            "Farmer offers reviewed against viability thresholds.\n\n"
-            "## SIGNAL ANALYSIS\n"
-            "Rule: Accept >0.60, Counter 0.40-0.60, Decline <0.40.\n\n"
-            "## VIABILITY CHECK\n"
-            "Viability scores extracted from observation.\n\n"
-            "## RECOMMENDATION\n"
-            "Applying fixed viability-threshold decisions.\n\n"
-            f"## DIRECTIVE\n{directive}\n\n"
-            "## CONFIDENCE\nHIGH"
+            "SITUATION: Farmer offers reviewed against viability thresholds.\n"
+            "SIGNAL ANALYSIS: N/A\n"
+            "VIABILITY CHECK: Viability scores extracted from observation.\n"
+            "RECOMMENDATION: Applying fixed viability-threshold decisions.\n"
+            f"DIRECTIVE: {directive}\n"
+            "CONFIDENCE: HIGH"
         )
 
     # ------------------------------------------------------------------
@@ -198,14 +190,10 @@ class RuleBasedAgent:
         directive = json.dumps({"engine": "TREND", "actions": actions})
 
         return (
-            "## SITUATION\n"
-            "Social trend signals evaluated.\n\n"
-            "## SIGNAL ANALYSIS\n"
-            "Rule: Approve if composite_score >= 75, else Decline.\n\n"
-            "## VIABILITY CHECK\n"
-            "Order quantity set to suggested value for approved signals.\n\n"
-            "## RECOMMENDATION\n"
-            "Applying threshold-based trend decisions.\n\n"
-            f"## DIRECTIVE\n{directive}\n\n"
-            "## CONFIDENCE\nMEDIUM"
+            "SITUATION: Social trend signals evaluated.\n"
+            "SIGNAL ANALYSIS: Rule: Approve if composite_score >= 75, else Decline.\n"
+            "VIABILITY CHECK: Order quantity set to suggested value for approved signals.\n"
+            "RECOMMENDATION: Applying threshold-based trend decisions.\n"
+            f"DIRECTIVE: {directive}\n"
+            "CONFIDENCE: MEDIUM"
         )

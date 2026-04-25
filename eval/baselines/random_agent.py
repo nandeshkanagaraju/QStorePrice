@@ -47,16 +47,12 @@ class RandomAgent:
         confidence = self._rng.choice(["HIGH", "MEDIUM", "LOW"])
 
         return (
-            "## SITUATION\n"
-            "Current inventory assessed.\n\n"
-            "## SIGNAL ANALYSIS\n"
-            "Demand patterns observed across categories.\n\n"
-            "## VIABILITY CHECK\n"
-            "Price adjustments within floor constraints.\n\n"
-            "## RECOMMENDATION\n"
-            "Apply random price adjustments to selected batches.\n\n"
-            f"## DIRECTIVE\n{directive}\n\n"
-            f"## CONFIDENCE\n{confidence}"
+            "SITUATION: Current inventory assessed.\n"
+            "SIGNAL ANALYSIS: N/A\n"
+            "VIABILITY CHECK: N/A\n"
+            "RECOMMENDATION: Apply random price adjustments to selected batches.\n"
+            f"DIRECTIVE: {directive}\n"
+            f"CONFIDENCE: {confidence}"
         )
 
     def _random_farmer_brief(self, obs: str, info: dict) -> str:
@@ -75,16 +71,12 @@ class RandomAgent:
         confidence = self._rng.choice(["HIGH", "MEDIUM", "LOW"])
 
         return (
-            "## SITUATION\n"
-            "Farmer offers evaluated.\n\n"
-            "## SIGNAL ANALYSIS\n"
-            "Viability scores reviewed.\n\n"
-            "## VIABILITY CHECK\n"
-            "Offer economics assessed at random.\n\n"
-            "## RECOMMENDATION\n"
-            "Random farmer offer decisions applied.\n\n"
-            f"## DIRECTIVE\n{directive}\n\n"
-            f"## CONFIDENCE\n{confidence}"
+            "SITUATION: Farmer offers evaluated.\n"
+            "SIGNAL ANALYSIS: N/A\n"
+            "VIABILITY CHECK: N/A\n"
+            "RECOMMENDATION: Random farmer offer decisions applied.\n"
+            f"DIRECTIVE: {directive}\n"
+            f"CONFIDENCE: {confidence}"
         )
 
     def _random_trend_brief(self, obs: str, info: dict) -> str:
@@ -101,14 +93,10 @@ class RandomAgent:
         confidence = self._rng.choice(["HIGH", "MEDIUM", "LOW"])
 
         return (
-            "## SITUATION\n"
-            "Trend signals monitored.\n\n"
-            "## SIGNAL ANALYSIS\n"
-            "Social media patterns noted randomly.\n\n"
-            "## VIABILITY CHECK\n"
-            "Trend order feasibility assumed.\n\n"
-            "## RECOMMENDATION\n"
-            f"Random trend decision for {cat}.\n\n"
-            f"## DIRECTIVE\n{directive}\n\n"
-            f"## CONFIDENCE\n{confidence}"
+            "SITUATION: Trend signals monitored.\n"
+            "SIGNAL ANALYSIS: N/A\n"
+            "VIABILITY CHECK: N/A\n"
+            f"RECOMMENDATION: Random trend decision for {cat}.\n"
+            f"DIRECTIVE: {directive}\n"
+            f"CONFIDENCE: {confidence}"
         )

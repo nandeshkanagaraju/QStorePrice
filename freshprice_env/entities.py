@@ -146,6 +146,8 @@ class SimulatedMarketState:
     active_event: ExternalEvent = ExternalEvent.NONE
     # Consumer demand boost — set by ConsumerAgent each tick (multi-agent mode)
     consumer_demand_boost: dict[str, float] = field(default_factory=dict)
+    # Per-category demand multipliers from approved trend signals — set by TrendEngine each tick
+    category_demand_boosts: dict[str, float] = field(default_factory=dict)
 
     @property
     def day_of_week(self) -> int:

@@ -134,13 +134,16 @@ def _generate_batches(
                 # First batch of select categories starts URGENT (6-24 hrs)
                 hours = round(rng.uniform(7.0, 20.0), 1)
             else:
-                # Distribute between FRESH and WATCH — no URGENT/CRITICAL at init
-                # WATCH requires > 24h, FRESH requires > 72h
-                # Mix: ~60% FRESH, ~40% WATCH
-                if rng.random() < 0.6:
-                    hours = round(rng.uniform(max(shelf_min, 73.0), shelf_max), 1)
+                # Distribute between FRESH and WATCH — no URGENT/CRITICAL at init.
+                # FRESH requires > 72h; only attempt if category max shelf life > 72h,
+                # otherwise fall back to WATCH to avoid an inverted rng.uniform range.
+                fresh_min = 73.0
+                can_be_fresh = shelf_max > fresh_min
+                if can_be_fresh and rng.random() < 0.6:
+                    hours = round(rng.uniform(fresh_min, shelf_max), 1)
                 else:
-                    hours = round(rng.uniform(25.0, 71.0), 1)
+                    watch_max = min(shelf_max, 71.0)
+                    hours = round(rng.uniform(25.0, max(25.0, watch_max)), 1)
 
             batch = SimulatedBatch(
                 batch_id=bid,

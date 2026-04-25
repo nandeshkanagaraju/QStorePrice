@@ -14,6 +14,7 @@ from dataclasses import replace
 from freshprice_env.constants import (
     ANTIHACK_EARLY_DISCOUNT_HOURS_THRESHOLD,
     ANTIHACK_EARLY_DISCOUNT_PRICE_THRESHOLD,
+    FESTIVAL_DEMAND_MULTIPLIERS,
     PRICE_MULTIPLIER_MIN,
     PRICE_MULTIPLIER_MAX,
     R1_ANTIHACK_BELOW_FLOOR,
@@ -21,10 +22,16 @@ from freshprice_env.constants import (
     R1_EXPIRED_UNIT_PENALTY,
     R1_NEAR_EXPIRY_HOURS,
     R1_URGENCY_CLEARANCE_BONUS,
+    SPORTS_EVENT_DAIRY_MULTIPLIER,
+    SPORTS_EVENT_PACKAGED_MULTIPLIER,
     TICKS_PER_DAY,
+    WEATHER_COLD_BAKERY_DAIRY_MULTIPLIER,
+    WEATHER_HOT_DAIRY_MULTIPLIER,
+    WEATHER_HOT_FRUITS_MULTIPLIER,
+    WEATHER_RAIN_DEMAND_MULTIPLIER,
 )
 from freshprice_env.entities import SimulatedBatch, SimulatedMarketState
-from freshprice_env.enums import BatchStatus
+from freshprice_env.enums import BatchStatus, ExternalEvent, WeatherCondition
 from freshprice_env.market_state import get_base_demand_velocity
 
 logger = logging.getLogger(__name__)
@@ -229,6 +236,15 @@ class PricingEngine:
                 batch.category, state.hour_of_day, state.day_of_week,
             )
 
+            # Weather and event demand multipliers (from ExternalShockEngine state)
+            base_velocity *= PricingEngine._shock_demand_mult(state, batch.category)
+
+            # Approved trend signal demand boost (per category)
+            base_velocity *= state.category_demand_boosts.get(batch.category, 1.0)
+
+            # Consumer agent demand boost (per batch, multi-agent mode only)
+            base_velocity *= state.consumer_demand_boost.get(batch.batch_id, 1.0)
+
             # Price elasticity: higher discount → more demand
             if batch.current_price > 0:
                 price_elasticity_factor = (batch.original_price / batch.current_price) ** 1.5
@@ -391,3 +407,37 @@ class PricingEngine:
         r1 -= R1_ANTIHACK_BELOW_FLOOR * below_floor_violations
 
         return r1
+
+    # ------------------------------------------------------------------
+    # Demand multiplier helpers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _shock_demand_mult(state: SimulatedMarketState, category: str) -> float:
+        """Return the combined weather + event demand multiplier for a category."""
+        mult = 1.0
+        weather = state.weather_condition
+        event = state.active_event
+
+        if weather == WeatherCondition.RAINY:
+            mult *= WEATHER_RAIN_DEMAND_MULTIPLIER
+        elif weather == WeatherCondition.HOT:
+            if category == "fruits":
+                mult *= WEATHER_HOT_FRUITS_MULTIPLIER
+            elif category == "dairy":
+                mult *= WEATHER_HOT_DAIRY_MULTIPLIER
+        elif weather == WeatherCondition.COLD:
+            if category in ("bakery", "dairy"):
+                mult *= WEATHER_COLD_BAKERY_DAIRY_MULTIPLIER
+
+        if event == ExternalEvent.FESTIVAL:
+            mult *= FESTIVAL_DEMAND_MULTIPLIERS.get(category, 1.3)
+        elif event == ExternalEvent.SPORTS_EVENT:
+            if category == "packaged":
+                mult *= SPORTS_EVENT_PACKAGED_MULTIPLIER
+            elif category == "dairy":
+                mult *= SPORTS_EVENT_DAIRY_MULTIPLIER
+        elif event == ExternalEvent.LOCAL_HOLIDAY:
+            mult *= 1.3
+
+        return mult

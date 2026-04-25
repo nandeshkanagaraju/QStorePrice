@@ -20,27 +20,27 @@ _RE_FLAGS = re.DOTALL | re.IGNORECASE
 
 _SECTION_PATTERNS: dict[str, re.Pattern[str]] = {
     "situation": re.compile(
-        r"SITUATION\s*:\s*(.*?)(?=SIGNAL\s*ANALYSIS|VIABILITY\s*CHECK|RECOMMENDATION|DIRECTIVE|CONFIDENCE|$)",
+        r"(?:#+\s*)?SITUATION\s*:?\s*(.*?)(?=(?:#+\s*)?(?:SIGNAL\s*ANALYSIS|VIABILITY\s*CHECK|RECOMMENDATION|DIRECTIVE|CONFIDENCE)|$)",
         _RE_FLAGS,
     ),
     "signal_analysis": re.compile(
-        r"SIGNAL\s*ANALYSIS\s*:\s*(.*?)(?=VIABILITY\s*CHECK|RECOMMENDATION|DIRECTIVE|CONFIDENCE|$)",
+        r"(?:#+\s*)?SIGNAL\s*ANALYSIS\s*:?\s*(.*?)(?=(?:#+\s*)?(?:VIABILITY\s*CHECK|RECOMMENDATION|DIRECTIVE|CONFIDENCE)|$)",
         _RE_FLAGS,
     ),
     "viability_check": re.compile(
-        r"VIABILITY\s*CHECK\s*:\s*(.*?)(?=RECOMMENDATION|DIRECTIVE|CONFIDENCE|$)",
+        r"(?:#+\s*)?VIABILITY\s*CHECK\s*:?\s*(.*?)(?=(?:#+\s*)?(?:RECOMMENDATION|DIRECTIVE|CONFIDENCE)|$)",
         _RE_FLAGS,
     ),
     "recommendation": re.compile(
-        r"RECOMMENDATION\s*:\s*(.*?)(?=DIRECTIVE|CONFIDENCE|$)",
+        r"(?:#+\s*)?RECOMMENDATION\s*:?\s*(.*?)(?=(?:#+\s*)?(?:DIRECTIVE|CONFIDENCE)|$)",
         _RE_FLAGS,
     ),
     "directive": re.compile(
-        r"DIRECTIVE\s*:\s*(.*?)(?=CONFIDENCE|$)",
+        r"(?:#+\s*)?DIRECTIVE\s*:?\s*(.*?)(?=(?:#+\s*)?CONFIDENCE|$)",
         _RE_FLAGS,
     ),
     "confidence": re.compile(
-        r"CONFIDENCE\s*:\s*(HIGH|MEDIUM|LOW)",
+        r"(?:#+\s*)?CONFIDENCE\s*:?\s*(HIGH|MEDIUM|LOW)",
         re.IGNORECASE,
     ),
 }
