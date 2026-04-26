@@ -1,13 +1,24 @@
 # QStorePrice OpenEnv server image.
 #
-# Builds a small image that serves the FastAPI OpenEnv app on port 8000 (the
-# OpenEnv default — PDF page 47 / page 48). Used by the Hugging Face Space
-# (sdk: docker) and by anyone running `docker run` locally:
+# Builds the Vite React sim UI (`web/`) and serves it at /sim/ on the same
+# origin as POST /api/sim/* (FastAPI), so the Space behaves like local
+# `vite` + proxy. Used by the Hugging Face Space (sdk: docker):
 #
 #     docker run -d -p 8000:8000 registry.hf.space/<user>-qstoreprice:latest
 #
-# To run the optional Gradio demo UI inside the same image, override the CMD:
-#     docker run -e PORT=7860 ... python app.py
+# Root `/` redirects to `/sim/` when SIM_UI_DEFAULT=1 (default here). Set
+# SIM_UI_DEFAULT=0 to serve the legacy HTML KPI dashboard at `/` instead.
+#
+# Gradio demo: override CMD, e.g. `docker run ... python app.py`
+# ---------------------------------------------------------------------------
+FROM node:22-bookworm-slim AS sim-ui
+WORKDIR /src/web
+COPY web/package.json web/package-lock.json ./
+RUN npm ci
+COPY web/ ./
+ENV VITE_BASE=/sim/
+RUN npm run build
+
 FROM python:3.11-slim
 
 WORKDIR /app
@@ -29,15 +40,20 @@ RUN pip install --no-cache-dir -r requirements.txt \
 # Copy the package itself
 COPY . .
 
+# React sim dashboard (same API paths as local: /api/sim/reset, /api/sim/step).
+COPY --from=sim-ui /src/web/dist ./static/sim
+
 # Install the env as a package so `from models import ...` and
 # `from client import ...` work the way the OpenEnv CLI expects.
 RUN pip install --no-cache-dir -e .
 
-# Default port matches the OpenEnv canonical server (PDF page 47).
+# Default port matches README Space frontmatter (app_port: 8000).
 ENV HOST=0.0.0.0 \
     PORT=8000 \
     WORKERS=1 \
-    LOG_LEVEL=info
+    LOG_LEVEL=info \
+    SIM_UI_DEFAULT=1 \
+    ENABLE_WEB_INTERFACE=false
 
 EXPOSE 8000
 

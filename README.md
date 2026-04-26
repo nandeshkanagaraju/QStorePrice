@@ -4,6 +4,8 @@ emoji: 🥭
 colorFrom: green
 colorTo: red
 sdk: docker
+# HF Docker Space forwards to this port (must match Uvicorn PORT).
+app_port: 8000
 app_file: app.py
 pinned: false
 ---
@@ -115,35 +117,51 @@ decision quality:
 
 ## 3. Results
 
-*Results below are projected from curriculum promotion thresholds.
-Run training and evaluation to replace with actuals.*
+### Measured comparison (committed in this repo)
 
-### WRR: Before vs After Training
+We ship **two kinds of numbers** so judges can see *real* env math, not placeholders:
 
-| Scenario | Zero-Shot WRR | Trained WRR | Improvement |
-|----------|--------------|-------------|-------------|
-| STABLE_WEEK | ~0.09 | ~0.72 | +685% |
-| BUSY_WEEKEND | ~0.06 | ~0.70 | +1067% |
-| FARMER_WEEK | ~0.04 | ~0.68 | +1485% |
-| TREND_WEEK | ~0.07 | ~0.65 | +857% |
-| CRISIS_WEEK | ~0.03 | ~0.58 | +1833% |
+| Label | What it is | How it was produced |
+|-------|------------|---------------------|
+| **Before** | Deterministic **RuleBasedAgent** (no LLM) | `python scripts/generate_comparison_artifacts.py` → `eval/comparison/baseline_heuristic_measured.json` |
+| **After** | **Greedy SFT** policy on `Qwen/Qwen2.5-1.5B-Instruct` | Parsed from `working_output.ipynb` eval cells → `eval/fixtures/kaggle_sft_eval_snapshot.json` (currently **STABLE_WEEK** + **CRISIS_WEEK** only). |
+
+Episode WRR is the environment’s **end-of-episode** `final_reward.wrr` (same family of numbers as `eval/evaluator.py`). *Regenerate the baseline column anytime with the script above; add more “After” scenarios by extending the fixture or running `eval/evaluator.py` on your checkpoint and merging JSON.*
+
+#### WRR — Before vs After (mean ± std, 2 episodes / scenario)
+
+| Scenario | Before (Rule-based) | After (SFT greedy) | Δ (After − Before) |
+|----------|--------------------:|-------------------:|--------------------:|
+| STABLE_WEEK | 2.0295 ± 0.0036 | **2.3061** ± 0.1478 | **+0.2766** |
+| BUSY_WEEKEND | 2.3696 ± 0.1283 | — | — |
+| FARMER_WEEK | 2.2028 ± 0.3682 | — | — |
+| TREND_WEEK | 2.1229 ± 0.3411 | — | — |
+| CRISIS_WEEK | 2.2465 ± 0.0962 | **2.1746** ± 0.0938 | **−0.0719** |
+
+Full machine-readable rows: `eval/comparison/comparison_summary.json`.
+
+![WRR comparison — measured baseline vs notebook SFT where available](static/training/readme_wrr_comparison.png)
+
+**Regenerate table + chart** after new runs:
+
+```bash
+python scripts/generate_comparison_artifacts.py --episodes 2
+python scripts/plot_readme_comparison.py
+```
 
 ### Reasoning quality vs WRR correlation
 
-The research question: does **brief quality** improve alongside WRR, or does
-the model find WRR shortcuts that bypass reasoning?
+Does **brief quality** move with WRR, or does the policy find shortcuts?
+`brief_quality_score` is scored independently of WRR. After training runs,
+plot correlation from logs via `eval/evaluator.py` + `eval/reward_curves.py`
+→ PNGs under `eval/plots/`.
 
-`brief_quality_score` is scored independently of WRR (structural completeness +
-claim grounding + confidence calibration). If it *leads* WRR improvement by a
-few episodes during GRPO, the model is learning to reason better — not gaming.
+### Training curves (notebook + exports)
 
-*Correlation plot — generate after training by running `eval/evaluator.py`
-and `eval/reward_curves.py`. The PNG will appear in `eval/plots/`.*
-
-### Training curves
-
-*Reward curve plots — generated automatically during training and saved to
-`eval/plots/` by `eval/reward_curves.py`.*
+Notebook training metrics and eval-by-scenario plots are exported to
+`static/training/` (see `scripts/export_notebook_training_assets.py`).
+Reward curves from the GRPO JSONL logger live under `eval/plots/` when you run
+`eval/reward_curves.py` during training.
 
 ---
 
@@ -191,6 +209,7 @@ training/
   curriculum.py          # 5-level curriculum manager
 
 eval/
+  comparison/            # measured baseline + summary JSON (README §3)
   evaluator.py           # Deterministic evaluation (greedy decoding)
   reward_curves.py       # WRR + loss curve plots → eval/plots/
   anti_hack_checker.py   # Trajectory anti-hack audit
@@ -238,11 +257,27 @@ print(obs[:200])
 
 Endpoints: `GET /health` · `POST /reset` · `POST /step` · `GET /state` · `WS /ws` · `GET /docs`
 
+### Hugging Face Space (ship the React sim UI)
+
+The Dockerfile builds `web/` into `static/sim/` and runs `python -m server.app`.
+I cannot push to your HF account from here; after you commit these changes:
+
+1. **Create** a Space with **Docker** SDK (or connect this GitHub repo under the Space’s **Files** / repository settings so HF builds from `Dockerfile`).
+2. **Build** must succeed (Node `npm ci` + `npm run build`, then Python `pip install -e .`). Open the Space URL: **`/`** redirects to **`/sim/`** (FreshQuick UI); **`/api/sim/*`** matches local behavior. The image sets **`ENABLE_WEB_INTERFACE=false`** so OpenEnv’s **`/web`** UI does not take over **`/`**; set it to `true` only if you intentionally want the OpenEnv web client at `/` (the React sim remains at **`/sim/`**).
+3. **Optional:** `huggingface-cli login` then `git remote add space https://huggingface.co/spaces/<USER>/<NAME>` and `git push space main` if you deploy by git instead of GitHub sync.
+
 ### Live Dashboard & Admin Endpoints
 
-The server also serves a polling HTML dashboard at `/` with admin JSON endpoints:
+**Docker / Hugging Face Space (default image):** the FreshQuick **React** sim UI
+is built into `static/sim/` and served at **`/sim/`**, using the same **`/api/sim/*`**
+session API as local `web` + Vite. **`GET /`** redirects to **`/sim/`** when
+`SIM_UI_DEFAULT=1` (Dockerfile default). The original HTML KPI dashboard is still
+available at **`/kpi`**.
 
-- `GET /` — live dashboard (KPIs, per-scenario WRR bars, reward curve, recent episodes)
+**Local dev without a sim build:** `GET /` serves the legacy HTML dashboard; run
+`cd web && npm run dev` and use the Vite proxy to `http://127.0.0.1:8000` for the
+React UI.
+
 - `GET /admin/dashboard` — full metrics snapshot (JSON)
 - `GET /admin/metrics/scores` — per-episode records, optionally `?scenario=STABLE_WEEK`
 - `GET /admin/metrics/reward-curve` — per-step reward records

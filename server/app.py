@@ -18,12 +18,15 @@ contract):
     GET  /admin/metrics/reward-curve - flat list of step records
     GET  /admin/tasks                - curriculum scenario list
     POST /admin/metrics/reset        - clear in-memory metrics
-    GET  /                           - HTML dashboard (when static/ present)
+    GET  /                           - redirects to /sim/ when Docker-built UI exists
+                                       and SIM_UI_DEFAULT=1; else legacy KPI HTML
+    GET  /sim/                       - FreshQuick React sim (built in Docker image)
+    GET  /kpi                        - legacy HTML KPI dashboard
+    GET  /dashboard                  - same dashboard when HF web UI is enabled
 
-The OpenEnv app is built by openenv-core's `create_fastapi_app` so that we
-inherit the standard request/response schemas. If openenv-core is missing
-(common in dev environments), the server falls back to a plain FastAPI app
-with /health so the dashboard still works.
+The OpenEnv app uses openenv-core's `create_app` (standard API; Gradio at
+``/web`` when ``ENABLE_WEB_INTERFACE`` is set, e.g. after ``openenv push``).
+If openenv-core is missing, the server falls back to a plain FastAPI app.
 
 Run:
 
@@ -40,11 +43,24 @@ import os
 from pathlib import Path
 
 try:
-    from openenv.core.env_server import create_fastapi_app
+    from openenv.core.env_server import create_app
     _OPENENV_AVAILABLE = True
 except ImportError:
     _OPENENV_AVAILABLE = False
-    create_fastapi_app = None  # type: ignore[assignment]
+    create_app = None  # type: ignore[assignment]
+
+
+def _web_interface_enabled() -> bool:
+    return os.environ.get("ENABLE_WEB_INTERFACE", "false").lower() in (
+        "true",
+        "1",
+        "yes",
+    )
+
+
+def _prefer_sim_ui_at_root() -> bool:
+    """When true and ``static/sim/index.html`` exists, ``GET /`` redirects to ``/sim/``."""
+    return os.environ.get("SIM_UI_DEFAULT", "").lower() in ("true", "1", "yes")
 
 
 def _build_app():
@@ -52,7 +68,7 @@ def _build_app():
     is missing so the dashboard still works in dev environments."""
     if _OPENENV_AVAILABLE:
         from server.environment import BriefAction, BriefObservation, FreshPriceOpenEnv
-        return create_fastapi_app(
+        return create_app(
             env=FreshPriceOpenEnv,
             action_cls=BriefAction,
             observation_cls=BriefObservation,
@@ -69,6 +85,25 @@ def _build_app():
 
 
 app = _build_app()
+
+# CORS for local Vite dev server (React sim dashboard)
+from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+
+_origins = os.environ.get(
+    "SIM_UI_ORIGINS",
+    "http://127.0.0.1:5173,http://localhost:5173",
+).split(",")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[o.strip() for o in _origins if o.strip()],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+from server.demo_sim import router as demo_sim_router  # noqa: E402
+
+app.include_router(demo_sim_router)
 
 
 # ---------------------------------------------------------------------------
@@ -119,13 +154,36 @@ def admin_metrics_reset():
 _STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
 if _STATIC_DIR.is_dir():
     from fastapi.staticfiles import StaticFiles  # noqa: E402
-    from fastapi.responses import FileResponse  # noqa: E402
+    from fastapi.responses import FileResponse, RedirectResponse  # noqa: E402
 
     app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
 
-    @app.get("/", include_in_schema=False)
-    def dashboard_index():
-        return FileResponse(str(_STATIC_DIR / "index.html"))
+    _sim_ui_dir = _STATIC_DIR / "sim"
+    if (_sim_ui_dir / "index.html").is_file():
+        app.mount(
+            "/sim",
+            StaticFiles(directory=str(_sim_ui_dir), html=True),
+            name="sim_ui",
+        )
+
+    if not _web_interface_enabled():
+
+        @app.get("/kpi", include_in_schema=False)
+        def kpi_dashboard():
+            """Original polling KPI dashboard (HTML + /static/*)."""
+            return FileResponse(str(_STATIC_DIR / "index.html"))
+
+        @app.get("/", include_in_schema=False)
+        def dashboard_index():
+            if (_sim_ui_dir / "index.html").is_file() and _prefer_sim_ui_at_root():
+                return RedirectResponse(url="/sim/", status_code=302)
+            return FileResponse(str(_STATIC_DIR / "index.html"))
+    else:
+
+        @app.get("/dashboard", include_in_schema=False)
+        def dashboard_index_hf():
+            """HTML KPI dashboard (root redirects to OpenEnv /web/)."""
+            return FileResponse(str(_STATIC_DIR / "index.html"))
 
 
 def main() -> None:

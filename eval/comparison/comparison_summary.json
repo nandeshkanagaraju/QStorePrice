@@ -1,0 +1,77 @@
+{
+  "generated_for": "README section 3 + comparison plot",
+  "baseline": {
+    "type": "heuristic:RuleBasedAgent (no LLM)",
+    "evaluation_date": "2026-04-26T15:22:38.504870",
+    "episodes_per_scenario": 2,
+    "path": "eval/comparison/baseline_heuristic_measured.json"
+  },
+  "trained_fixture": {
+    "run_label": "Kaggle working_output.ipynb \u2014 greedy eval on SFT checkpoint",
+    "model_id": "Qwen/Qwen2.5-1.5B-Instruct @ checkpoints/sft_v1",
+    "source": "Parsed from working_output.ipynb evaluation cells (STABLE_WEEK + CRISIS_WEEK, 2 seeds each).",
+    "path": "eval/fixtures/kaggle_sft_eval_snapshot.json"
+  },
+  "scenarios": [
+    {
+      "scenario": "STABLE_WEEK",
+      "before_label": "RuleBasedAgent (measured)",
+      "before_wrr_mean": 2.0295,
+      "before_wrr_std": 0.0036,
+      "before_quality_mean": 0.5153,
+      "after_label": "Kaggle working_output.ipynb \u2014 greedy eval on SFT checkpoint",
+      "after_wrr_mean": 2.3061,
+      "after_wrr_std": 0.1478,
+      "wrr_delta_after_minus_before": 0.2766,
+      "trained_available": true
+    },
+    {
+      "scenario": "BUSY_WEEKEND",
+      "before_label": "RuleBasedAgent (measured)",
+      "before_wrr_mean": 2.3696,
+      "before_wrr_std": 0.1283,
+      "before_quality_mean": 0.5128,
+      "after_label": "Kaggle working_output.ipynb \u2014 greedy eval on SFT checkpoint",
+      "after_wrr_mean": null,
+      "after_wrr_std": null,
+      "wrr_delta_after_minus_before": null,
+      "trained_available": false
+    },
+    {
+      "scenario": "FARMER_WEEK",
+      "before_label": "RuleBasedAgent (measured)",
+      "before_wrr_mean": 2.2028,
+      "before_wrr_std": 0.3682,
+      "before_quality_mean": 0.5144,
+      "after_label": "Kaggle working_output.ipynb \u2014 greedy eval on SFT checkpoint",
+      "after_wrr_mean": null,
+      "after_wrr_std": null,
+      "wrr_delta_after_minus_before": null,
+      "trained_available": false
+    },
+    {
+      "scenario": "TREND_WEEK",
+      "before_label": "RuleBasedAgent (measured)",
+      "before_wrr_mean": 2.1229,
+      "before_wrr_std": 0.3411,
+      "before_quality_mean": 0.5044,
+      "after_label": "Kaggle working_output.ipynb \u2014 greedy eval on SFT checkpoint",
+      "after_wrr_mean": null,
+      "after_wrr_std": null,
+      "wrr_delta_after_minus_before": null,
+      "trained_available": false
+    },
+    {
+      "scenario": "CRISIS_WEEK",
+      "before_label": "RuleBasedAgent (measured)",
+      "before_wrr_mean": 2.2465,
+      "before_wrr_std": 0.0962,
+      "before_quality_mean": 0.5056,
+      "after_label": "Kaggle working_output.ipynb \u2014 greedy eval on SFT checkpoint",
+      "after_wrr_mean": 2.1746,
+      "after_wrr_std": 0.0938,
+      "wrr_delta_after_minus_before": -0.0719,
+      "trained_available": true
+    }
+  ]
+}
