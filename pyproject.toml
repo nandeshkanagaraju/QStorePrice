@@ -66,6 +66,8 @@ Homepage = "https://github.com/nandeshkanagaraju/QStorePrice"
 Repository = "https://github.com/nandeshkanagaraju/QStorePrice"
 
 [project.scripts]
+# `server` is required by `openenv validate` (multi-mode deployment).
+server = "server.app:main"
 qstoreprice-server = "server.app:main"
 
 [tool.setuptools]

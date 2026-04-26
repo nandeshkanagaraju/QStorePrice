@@ -1,6 +1,7 @@
 """Smoke test: confirm FreshPriceOpenEnv conforms to the OpenEnv contract.
 
-Run:
+Run (from repository root):
+    pip install -e .
     pip install openenv-core
     python scripts/check_openenv.py
 
