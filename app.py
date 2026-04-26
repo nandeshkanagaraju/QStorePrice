@@ -5,13 +5,23 @@ Allows judges to interact with the environment without local install.
 
 from __future__ import annotations
 
+import os
+
 import gradio as gr
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-from freshprice_env.freshprice_env import FreshPriceEnv
 from freshprice_env.enums import CurriculumScenario
+from freshprice_env.freshprice_env import FreshPriceEnv
+from gradio_training_panel import (
+    agents_markdown,
+    environment_markdown,
+    load_training_snapshot,
+    scenarios_markdown,
+    training_plot_paths,
+    training_run_markdown,
+)
 
 # ---------------------------------------------------------------------------
 # Global session state (one session at a time for the demo)
@@ -152,12 +162,25 @@ def _wrr_chart(history: list[float]) -> object:
     return fig
 
 
+def _gradio_port() -> int:
+    """Port for UI (HF Spaces / Docker set `PORT`; local default 7860)."""
+    raw = os.environ.get("PORT") or os.environ.get("GRADIO_SERVER_PORT") or "7860"
+    return int(raw)
+
+
 # ---------------------------------------------------------------------------
 # Gradio UI
 # ---------------------------------------------------------------------------
 
 with gr.Blocks(title="QStorePrice AI — Perishable Goods Intelligence") as demo:
     gr.Markdown("# QStorePrice AI")
+    _port_hint = _gradio_port()
+    gr.Markdown(
+        f"**Open this app in your browser:** "
+        f"[http://127.0.0.1:{_port_hint}/](http://127.0.0.1:{_port_hint}/) "
+        f"or [http://localhost:{_port_hint}/](http://localhost:{_port_hint}/) "
+        f"— do **not** use `http://0.0.0.0:...` (invalid in Chrome/Edge)."
+    )
     gr.Markdown(
         "**Can an LLM learn to run a perishable goods store?** "
         "Write Operating Briefs to manage pricing, farmer offers, and "
@@ -165,44 +188,49 @@ with gr.Blocks(title="QStorePrice AI — Perishable Goods Intelligence") as demo
         "Target: Weekly Waste Recovery Rate (WRR) >= 0.70."
     )
 
-    with gr.Row():
-        scenario_dropdown = gr.Dropdown(
-            choices=[s.name for s in CurriculumScenario],
-            value="STABLE_WEEK",
-            label="Training Scenario",
-        )
-        seed_input = gr.Number(value=42, label="Episode Seed", precision=0)
-        reset_btn = gr.Button("Reset Episode", variant="primary")
+    _snap = load_training_snapshot()
+    _p1, _p2 = training_plot_paths()
 
-    with gr.Row():
-        with gr.Column(scale=2):
-            obs_box = gr.Textbox(
-                label="Current State (What the LLM sees)",
-                lines=20,
-                interactive=False,
+    with gr.Tabs():
+        with gr.Tab("Playground"):
+            with gr.Row():
+                scenario_dropdown = gr.Dropdown(
+                    choices=[s.name for s in CurriculumScenario],
+                    value="STABLE_WEEK",
+                    label="Training Scenario",
+                )
+                seed_input = gr.Number(value=42, label="Episode Seed", precision=0)
+                reset_btn = gr.Button("Reset Episode", variant="primary")
+
+            with gr.Row():
+                with gr.Column(scale=2):
+                    obs_box = gr.Textbox(
+                        label="Current State (What the LLM sees)",
+                        lines=20,
+                        interactive=False,
+                    )
+                    brief_box = gr.Textbox(
+                        label="Your Operating Brief (Edit and submit)",
+                        lines=15,
+                        interactive=True,
+                    )
+                    submit_btn = gr.Button("Submit Brief", variant="primary")
+                    status_box = gr.Textbox(label="Status", interactive=False)
+                with gr.Column(scale=1):
+                    wrr_plot = gr.Plot(label="WRR Progress")
+
+            reset_btn.click(
+                fn=reset_episode,
+                inputs=[scenario_dropdown, seed_input],
+                outputs=[obs_box, brief_box, status_box, wrr_plot],
             )
-            brief_box = gr.Textbox(
-                label="Your Operating Brief (Edit and submit)",
-                lines=15,
-                interactive=True,
+            submit_btn.click(
+                fn=submit_brief,
+                inputs=[brief_box],
+                outputs=[obs_box, brief_box, status_box, wrr_plot],
             )
-            submit_btn = gr.Button("Submit Brief", variant="primary")
-            status_box = gr.Textbox(label="Status", interactive=False)
-        with gr.Column(scale=1):
-            wrr_plot = gr.Plot(label="WRR Progress")
 
-    reset_btn.click(
-        fn=reset_episode,
-        inputs=[scenario_dropdown, seed_input],
-        outputs=[obs_box, brief_box, status_box, wrr_plot],
-    )
-    submit_btn.click(
-        fn=submit_brief,
-        inputs=[brief_box],
-        outputs=[obs_box, brief_box, status_box, wrr_plot],
-    )
-
-    gr.Markdown("""
+            gr.Markdown("""
 ## How to Use
 1. Select a scenario and press **Reset Episode**
 2. Read the state observation carefully
@@ -220,6 +248,42 @@ with gr.Blocks(title="QStorePrice AI — Perishable Goods Intelligence") as demo
 - **CONFIDENCE**: HIGH / MEDIUM / LOW
 """)
 
+        with gr.Tab("Environment & curriculum"):
+            gr.Markdown(environment_markdown())
+            gr.Markdown(scenarios_markdown())
+            gr.Markdown(agents_markdown())
+
+        with gr.Tab("Training (notebook export)"):
+            gr.Markdown(training_run_markdown(_snap))
+            with gr.Row():
+                gr.Image(
+                    label="Training metrics (from `working_output.ipynb`)",
+                    value=_p1,
+                    type="filepath",
+                )
+                gr.Image(
+                    label="Eval / WRR by scenario",
+                    value=_p2,
+                    type="filepath",
+                )
+            gr.Markdown(
+                "Regenerate assets after a new Kaggle run: "
+                "`python scripts/export_notebook_training_assets.py`"
+            )
+
 
 if __name__ == "__main__":
-    demo.launch()
+    port = _gradio_port()
+    # Bind all interfaces for Docker / Hugging Face Spaces; browsers still use localhost.
+    server_name = os.environ.get("GRADIO_SERVER_NAME", "0.0.0.0")
+    sep = "\n" + "=" * 64 + "\n"
+    print(sep + "  QStorePrice — Gradio UI\n")
+    print(f"    http://127.0.0.1:{port}/")
+    print(f"    http://localhost:{port}/\n")
+    print("  (0.0.0.0 is only the listen address — it is not a valid browser URL.)\n" + sep)
+    demo.launch(
+        server_name=server_name,
+        server_port=port,
+        # Avoid opening a tab to 0.0.0.0 on Windows (ERR_ADDRESS_INVALID).
+        inbrowser=False,
+    )

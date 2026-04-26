@@ -1,0 +1,44 @@
+{
+  "source_notebook": "working_output.ipynb",
+  "model_id": "Qwen/Qwen2.5-1.5B-Instruct",
+  "sft_training_loss": 0.326,
+  "sft_runtime_seconds": 1387.3,
+  "grpo_rollout_rows": [
+    {
+      "episode": 1,
+      "col2": 1.991,
+      "col3": 0.036,
+      "col4": 0.0,
+      "col5": 0.0,
+      "col6": 0.764,
+      "violations": 5,
+      "pass": "PASS"
+    },
+    {
+      "episode": 2,
+      "col2": 2.107,
+      "col3": 0.059,
+      "col4": 0.0,
+      "col5": 0.0,
+      "col6": 0.764,
+      "violations": 0,
+      "pass": "PASS"
+    },
+    {
+      "episode": 3,
+      "col2": 2.407,
+      "col3": 0.048,
+      "col4": 0.0,
+      "col5": 0.0,
+      "col6": 0.78,
+      "violations": 6,
+      "pass": "FAIL"
+    }
+  ],
+  "eval_wrr_summary": "WRR  : 2.3061 +/- 0.1478",
+  "plots": [
+    "training_metrics.png",
+    "eval_wrr_by_scenario.png"
+  ],
+  "dpo_note": "DPO skipped"
+}

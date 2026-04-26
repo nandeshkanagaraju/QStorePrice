@@ -1,0 +1,16 @@
+.git
+.gitignore
+**/__pycache__
+**/*.pyc
+.pytest_cache
+.mypy_cache
+.ruff_cache
+checkpoints
+wandb
+web/node_modules
+web/dist
+static/sim
+.env
+*.egg-info
+dist
+build

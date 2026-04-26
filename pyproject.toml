@@ -38,12 +38,13 @@ dependencies = [
     "pydantic>=2.0.0",
     "fastapi>=0.110.0",
     "uvicorn>=0.27.0",
+    # Gradio demo (`app.py`) — same stack as requirements.txt for Spaces/Docker.
+    "gradio>=4.0",
+    "matplotlib>=3.7",
 ]
 
 [project.optional-dependencies]
 demo = [
-    "gradio>=4.0",
-    "matplotlib>=3.7",
     "openai>=1.0.0",
 ]
 training = [
@@ -72,7 +73,7 @@ qstoreprice-server = "server.app:main"
 
 [tool.setuptools]
 include-package-data = true
-py-modules = ["models", "client"]
+py-modules = ["models", "client", "gradio_training_panel"]
 
 [tool.setuptools.packages.find]
 where = ["."]

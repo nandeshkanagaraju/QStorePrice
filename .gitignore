@@ -1,13 +1,21 @@
+.venv/
 __pycache__/
 *.pyc
 *.pyo
 .env
 *.egg-info/
 dist/
+web/node_modules/
+web/dist/
+# Vite production build copied into the image (optional local test).
+static/sim/
 build/
 checkpoints/
 wandb/
 .mypy_cache/
 .ruff_cache/
 eval/baseline_results.json
-eval/plots/
+eval/heuristic_baseline_results.json
+# Ephemeral training plots — keep the README comparison chart tracked.
+eval/plots/*
+!eval/plots/readme_wrr_comparison.png
