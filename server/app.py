@@ -18,12 +18,12 @@ contract):
     GET  /admin/metrics/reward-curve - flat list of step records
     GET  /admin/tasks                - curriculum scenario list
     POST /admin/metrics/reset        - clear in-memory metrics
-    GET  /                           - HTML dashboard (when static/ present)
+    GET  /                           - HTML dashboard (static/, local default)
+    GET  /dashboard                  - same dashboard when HF web UI is enabled
 
-The OpenEnv app is built by openenv-core's `create_fastapi_app` so that we
-inherit the standard request/response schemas. If openenv-core is missing
-(common in dev environments), the server falls back to a plain FastAPI app
-with /health so the dashboard still works.
+The OpenEnv app uses openenv-core's `create_app` (standard API; Gradio at
+``/web`` when ``ENABLE_WEB_INTERFACE`` is set, e.g. after ``openenv push``).
+If openenv-core is missing, the server falls back to a plain FastAPI app.
 
 Run:
 
@@ -40,11 +40,19 @@ import os
 from pathlib import Path
 
 try:
-    from openenv.core.env_server import create_fastapi_app
+    from openenv.core.env_server import create_app
     _OPENENV_AVAILABLE = True
 except ImportError:
     _OPENENV_AVAILABLE = False
-    create_fastapi_app = None  # type: ignore[assignment]
+    create_app = None  # type: ignore[assignment]
+
+
+def _web_interface_enabled() -> bool:
+    return os.environ.get("ENABLE_WEB_INTERFACE", "false").lower() in (
+        "true",
+        "1",
+        "yes",
+    )
 
 
 def _build_app():
@@ -52,7 +60,7 @@ def _build_app():
     is missing so the dashboard still works in dev environments."""
     if _OPENENV_AVAILABLE:
         from server.environment import BriefAction, BriefObservation, FreshPriceOpenEnv
-        return create_fastapi_app(
+        return create_app(
             env=FreshPriceOpenEnv,
             action_cls=BriefAction,
             observation_cls=BriefObservation,
@@ -123,9 +131,17 @@ if _STATIC_DIR.is_dir():
 
     app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
 
-    @app.get("/", include_in_schema=False)
-    def dashboard_index():
-        return FileResponse(str(_STATIC_DIR / "index.html"))
+    if not _web_interface_enabled():
+
+        @app.get("/", include_in_schema=False)
+        def dashboard_index():
+            return FileResponse(str(_STATIC_DIR / "index.html"))
+    else:
+
+        @app.get("/dashboard", include_in_schema=False)
+        def dashboard_index_hf():
+            """HTML KPI dashboard (root redirects to OpenEnv /web/)."""
+            return FileResponse(str(_STATIC_DIR / "index.html"))
 
 
 def main() -> None:
