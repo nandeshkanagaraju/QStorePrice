@@ -4,6 +4,8 @@ emoji: 🥭
 colorFrom: green
 colorTo: red
 sdk: docker
+# HF proxies the public URL to this port; default is 7860 — must match Uvicorn.
+app_port: 8000
 app_file: app.py
 pinned: false
 ---
