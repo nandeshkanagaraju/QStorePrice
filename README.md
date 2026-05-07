@@ -1,13 +1,20 @@
 ---
-title: QStorePrice
+title: StorePrice — Gemma 4
 emoji: 🥭
-colorFrom: green
-colorTo: red
+colorFrom: blue
+colorTo: green
 sdk: docker
 # HF Docker Space forwards to this port (must match Uvicorn PORT).
 app_port: 8000
 app_file: app.py
 pinned: false
+short_description: Gemma 4 fine-tuned to cut perishable-food waste.
+tags:
+  - gemma-4
+  - gemma-4-good-hackathon
+  - global-resilience
+  - food-waste
+  - unsloth
 ---
 
 <div align="center">
@@ -26,11 +33,11 @@ pinned: false
 [![Unsloth](https://img.shields.io/badge/Fine--tuned%20with-Unsloth-FF6B35.svg)](https://github.com/unslothai/unsloth)
 [![TRL](https://img.shields.io/badge/RL-HuggingFace%20TRL-FFD21E.svg?logo=huggingface)](https://github.com/huggingface/trl)
 [![Gymnasium](https://img.shields.io/badge/Env-Gymnasium-181717.svg)](https://gymnasium.farama.org/)
-[![HF Space](https://img.shields.io/badge/%F0%9F%A4%97%20Space-Live%20Demo-yellow.svg)](https://huggingface.co/spaces/nandeshjeyalakshmi/QstorePricing)
+[![HF Space](https://img.shields.io/badge/%F0%9F%A4%97%20Space-Live%20Demo-yellow.svg)](https://huggingface.co/spaces/nandeshjeyalakshmi/storeprice-gemma4)
 [![YouTube](https://img.shields.io/badge/YouTube-Walkthrough-FF0000.svg?logo=youtube&logoColor=white)](https://youtu.be/RdCiUnYN83A)
 
 **[Watch 3-min Pitch](https://youtu.be/RdCiUnYN83A)** ·
-**[Live Demo](https://huggingface.co/spaces/nandeshjeyalakshmi/QstorePricing)** ·
+**[Live Demo](https://huggingface.co/spaces/nandeshjeyalakshmi/storeprice-gemma4)** ·
 **[Reproduce on Kaggle](KAGGLE.md)** ·
 **[Full Spec](FreshPrice_SDD.md)** ·
 **[Architecture Guide](DEVELOPER_GUIDE.md)**
@@ -80,7 +87,7 @@ Writeup:**
 | 1   | Kaggle Writeup (≤1500 w)  | This repository's Kaggle clone — use [`KAGGLE.md`](KAGGLE.md) and §1, §2, §7, §9 of this README as the source narrative.    |
 | 2   | Public YouTube video (≤3 min) | <https://youtu.be/RdCiUnYN83A> — problem → live demo → training evidence.                                                |
 | 3   | Public code repository    | <https://github.com/nandeshkanagaraju/QStorePrice> — this repo (MIT, no login required).                                    |
-| 4   | Live demo                 | <https://huggingface.co/spaces/nandeshjeyalakshmi/QstorePricing> — interactive Gradio dashboard, no login.                  |
+| 4   | Live demo                 | <https://huggingface.co/spaces/nandeshjeyalakshmi/storeprice-gemma4> — interactive Gradio dashboard, no login.                  |
 | 5   | Media gallery cover image | [`docs/training_evidence/cell30_out0.png`](docs/training_evidence/cell30_out0.png) — training metrics across rollouts.       |
 
 **Judging criteria → where to look:**
@@ -683,7 +690,7 @@ standalone proprietary model.
 <div align="center">
 
 **[Watch Demo](https://youtu.be/RdCiUnYN83A)** ·
-**[Live Space](https://huggingface.co/spaces/nandeshjeyalakshmi/QstorePricing)** ·
+**[Live Space](https://huggingface.co/spaces/nandeshjeyalakshmi/storeprice-gemma4)** ·
 **[Reproduce on Kaggle](KAGGLE.md)** ·
 **[Architecture Guide](DEVELOPER_GUIDE.md)** ·
 **[Spec](FreshPrice_SDD.md)**

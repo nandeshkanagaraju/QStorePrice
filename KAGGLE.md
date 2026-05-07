@@ -14,7 +14,7 @@
 [![Project README](https://img.shields.io/badge/Project-README-lightgrey.svg)](README.md)
 
 **[← Back to README](README.md)** ·
-**[Live Demo](https://huggingface.co/spaces/nandeshjeyalakshmi/QstorePricing)** ·
+**[Live Demo](https://huggingface.co/spaces/nandeshjeyalakshmi/storeprice-gemma4)** ·
 **[Spec](FreshPrice_SDD.md)**
 
 </div>
@@ -419,7 +419,7 @@ merged model to your HF account in one shot.
 | Target                    | File                                                              | Notes                                                                                  |
 | ------------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
 | Local CLI (no notebook)   | [`training/train.py`](training/train.py)                          | `python training/train.py --base-model google/gemma-4-26b-it ...`                       |
-| HF Space (live demo)      | [`Dockerfile`](Dockerfile) + [`app.py`](app.py)                   | Deployed at <https://huggingface.co/spaces/nandeshjeyalakshmi/QstorePricing>.          |
+| HF Space (live demo)      | [`Dockerfile`](Dockerfile) + [`app.py`](app.py)                   | Deployed at <https://huggingface.co/spaces/nandeshjeyalakshmi/storeprice-gemma4>.          |
 | Eval-only on a checkpoint | [`eval/evaluator.py`](eval/evaluator.py)                          | `python eval/evaluator.py --checkpoint checkpoints/sft_v1 --episodes 10`                |
 
 ---
@@ -442,7 +442,7 @@ merged model to your HF account in one shot.
 <div align="center">
 
 **[← Back to README](README.md)** ·
-**[Live Demo](https://huggingface.co/spaces/nandeshjeyalakshmi/QstorePricing)** ·
+**[Live Demo](https://huggingface.co/spaces/nandeshjeyalakshmi/storeprice-gemma4)** ·
 **[Open the Notebook](kaggle_qstoreprice.ipynb)**
 
 <sub>Built for the **Gemma 4 Good Hackathon** with Gemma 4 · Unsloth · TRL · Gymnasium · OpenEnv</sub>
