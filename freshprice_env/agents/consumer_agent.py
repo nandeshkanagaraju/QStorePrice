@@ -1,7 +1,8 @@
 """ConsumerAgent — a reactive buyer that responds to price and event signals.
 
-In MultiAgentFreshPriceEnv, this agent runs alongside the LLM store-manager.
-It models the collective buying behaviour of real customers:
+Reusable scripted demand model. Currently unused by the default
+`FreshPriceEnv` training loop; kept available for future multi-agent
+extensions. Models the collective buying behaviour of real customers:
 
   - Discount signals  → demand boost (price elasticity)
   - Festival events   → category-specific surge
