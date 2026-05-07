@@ -659,8 +659,8 @@ class FreshPriceEnv(gym.Env):
     def state(self) -> dict:
         """Return current environment state as a plain dict.
 
-        Required by the OpenEnv spec. Called by openenv validate and
-        by inference.py for structured logging.
+        Required by the OpenEnv spec. Called by `openenv validate` and by
+        the training/eval loops for structured logging.
         """
         if self._state is None:
             return {"status": "not_started"}

@@ -2,7 +2,9 @@
 
 # Running QStorePrice AI on Kaggle
 
-### A reproducibility guide for the full SFT → GRPO rollouts → DPO pipeline
+### A reproducibility guide for the full Gemma-4 SFT → GRPO rollouts → DPO pipeline
+
+*Submission for **The Gemma 4 Good Hackathon** — Impact Track: Global Resilience · Special Tech Track: Unsloth.*
 
 *End-to-end on a free Kaggle T4 GPU in 45–75 minutes.*
 
@@ -43,7 +45,7 @@ environment described in [`FreshPrice_SDD.md`](FreshPrice_SDD.md):
 
 | Stage                | Framework                  | What it does                                                                                              |
 | -------------------- | -------------------------- | --------------------------------------------------------------------------------------------------------- |
-| **SFT warm-start**   | Unsloth + TRL `SFTTrainer` | Teaches Qwen-2.5 the 6-section Operating Brief format from synthetic examples (90–450 per run).           |
+| **SFT warm-start**   | Unsloth + TRL `SFTTrainer` | Teaches Gemma 4 the 6-section Operating Brief format from synthetic examples (90–450 per run).            |
 | **GRPO rollouts**    | Custom rollout loop        | Runs the SFT model in `FreshPriceEnv` to collect trajectories *(no gradient updates — buffer building).* |
 | **DPO fine-tuning**  | TRL `DPOTrainer`           | Builds chosen/rejected pairs from the trajectory buffer and runs the actual RL gradient step.            |
 | **Evaluation**       | Greedy decoding            | Deterministic eval on fixed seeds, plus anti-hack pattern scan.                                          |
@@ -102,8 +104,9 @@ In the right-hand **Notebook options** panel:
 ### 3.3 (Optional) Add your HF token as a Kaggle Secret
 
 Only needed if you want the notebook to push the trained model back to your
-HF account. Public model downloads (`Qwen2.5-1.5B-Instruct`) work without a
-token.
+HF account. Gemma 4 weights are gated on Hugging Face, so you **do** need a
+token (with the Gemma EULA accepted on your HF account) for the initial
+model download.
 
 1. Right sidebar → **Add-ons → Secrets**.
 2. Click **Add a new secret**.
@@ -132,7 +135,7 @@ HF_TOKEN      = "hf_REPLACE_WITH_YOUR_TOKEN"   # leave placeholder to skip HF pu
 HF_REPO_ID    = "your-hf-username/qstoreprice-sft"
 
 # --- Model ---
-MODEL_ID = "Qwen/Qwen2.5-1.5B-Instruct"        # 1.5B fits T4; switch to 7B on A100
+MODEL_ID = "google/gemma-4-e4b-it"             # E4B fits T4; switch to 26B on A100
 
 # --- Auto-tuning master switch ---
 AUTO_TUNE = True   # pick epochs/batch/seq-len from detected VRAM + dataset size
@@ -140,7 +143,7 @@ AUTO_TUNE = True   # pick epochs/batch/seq-len from detected VRAM + dataset size
 
 | Knob                   | Default                              | When to change                                                                  |
 | ---------------------- | ------------------------------------ | ------------------------------------------------------------------------------- |
-| `MODEL_ID`             | `Qwen/Qwen2.5-1.5B-Instruct`         | Switch to `Qwen/Qwen2.5-7B-Instruct` only with ≥ 40 GB VRAM (Colab A100).       |
+| `MODEL_ID`             | `google/gemma-4-e4b-it`              | Switch to `google/gemma-4-26b-it` only with ≥ 40 GB VRAM (Colab A100).          |
 | `AUTO_TUNE`            | `True`                               | Set to `False` to use the `*_MANUAL` constants below it instead.                |
 | `HF_TOKEN`             | placeholder                          | Replace to enable Hub push, or leave alone to skip the push step.               |
 | `HF_REPO_ID`           | `your-hf-username/qstoreprice-sft`   | Replace with `<your-username>/<repo-name>`.                                     |
@@ -215,11 +218,11 @@ will break in the same way.
 
 - **Cell 8a** writes JSONL files to `training/sft_data/`. Auto-sized:
 
-  | Model           | Examples per (engine × difficulty) | Total |
-  | --------------- | ---------------------------------- | ----- |
-  | 0.5B / 1B       | 50                                 | 450   |
-  | **1.5B (default)** | **30**                          | **270** |
-  | 3B+             | 10                                 | 90    |
+  | Model               | Examples per (engine × difficulty) | Total   |
+  | ------------------- | ---------------------------------- | ------- |
+  | E2B                 | 50                                 | 450     |
+  | **E4B (default)**   | **30**                             | **270** |
+  | 26B / 31B           | 10                                 | 90      |
 
 - **Cell 8b** loads every file and verifies all 6 required section headers
   appear in each example.
@@ -230,7 +233,7 @@ will break in the same way.
 
 Inside the cell:
 
-1. `FastLanguageModel.from_pretrained()` loads Qwen in 4-bit.
+1. `FastLanguageModel.from_pretrained()` loads Gemma 4 in 4-bit.
 2. LoRA adapters added (`r=16, alpha=16, target_modules` = all Q/K/V/O + MLP).
 3. TRL `SFTTrainer.train()` runs with the auto-picked epochs/batch/seq-len.
 4. A sanity-check generation runs on a fresh prompt; if the output is missing
@@ -383,7 +386,7 @@ merged model to your HF account in one shot.
 | `RuntimeError: CUDA out of memory` in Cell 9                             | T4 + sequence too long                                  | Reduce `SFT_MAX_SEQ_LEN_MANUAL` to 1024 and set `AUTO_TUNE=False` in Cell 1.                 |
 | `ImportError: cannot import name 'KernelInfo' from 'unsloth_zoo'`        | Stale `unsloth_zoo` cached from a prior session         | Restart kernel and re-run Cell 3 (Unsloth install). Already pinned in current commit.        |
 | Cell 9 sanity check fails twice                                          | LoRA didn't converge in given epochs                    | Increase `SFT_EPOCHS_MANUAL` to 8 and `SFT_AUTO_RETRIES` to 2, set `AUTO_TUNE=False`.        |
-| `huggingface_hub.utils.GatedRepoError`                                   | Trying to load a gated model without auth               | Set `HF_TOKEN` in Cell 1 OR switch `MODEL_ID` to a fully public Qwen variant.                |
+| `huggingface_hub.utils.GatedRepoError`                                   | Gemma weights are gated and EULA not accepted           | Visit <https://huggingface.co/google/gemma-4-e4b-it>, accept the Gemma terms, then set `HF_TOKEN` in Cell 1. |
 | DPO cell prints *"skipping — buffer too small"*                          | GRPO produced < 4 valid trajectories                    | Increase `GRPO_EPISODES_MANUAL` to 6+; check Cell 11 didn't hit token-budget cutoff.         |
 | HF push raises `403 Forbidden`                                           | Token has Read scope, not Write                         | Regenerate token at <https://huggingface.co/settings/tokens> with **Write** role.            |
 | Server cell hangs                                                        | Port 8000 already used by a previous run                | Restart the kernel and re-run from Cell 16, or change `SERVER_PORT` in Cell 1.               |
@@ -415,8 +418,7 @@ merged model to your HF account in one shot.
 
 | Target                    | File                                                              | Notes                                                                                  |
 | ------------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| Local CLI (no notebook)   | [`training/train.py`](training/train.py)                          | `python training/train.py --base-model Qwen/Qwen2.5-7B-Instruct ...`                    |
-| Google Colab              | [`colab_training.ipynb`](colab_training.ipynb)                    | Same pipeline, Colab-flavoured install paths.                                          |
+| Local CLI (no notebook)   | [`training/train.py`](training/train.py)                          | `python training/train.py --base-model google/gemma-4-26b-it ...`                       |
 | HF Space (live demo)      | [`Dockerfile`](Dockerfile) + [`app.py`](app.py)                   | Deployed at <https://huggingface.co/spaces/nandeshjeyalakshmi/QstorePricing>.          |
 | Eval-only on a checkpoint | [`eval/evaluator.py`](eval/evaluator.py)                          | `python eval/evaluator.py --checkpoint checkpoints/sft_v1 --episodes 10`                |
 
@@ -443,6 +445,6 @@ merged model to your HF account in one shot.
 **[Live Demo](https://huggingface.co/spaces/nandeshjeyalakshmi/QstorePricing)** ·
 **[Open the Notebook](kaggle_qstoreprice.ipynb)**
 
-<sub>Built with Qwen-2.5 · Unsloth · TRL · Gymnasium · OpenEnv</sub>
+<sub>Built for the **Gemma 4 Good Hackathon** with Gemma 4 · Unsloth · TRL · Gymnasium · OpenEnv</sub>
 
 </div>

@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="QStorePrice AI Training Pipeline")
-    parser.add_argument("--base-model", default="Qwen/Qwen2.5-7B-Instruct")
+    parser.add_argument("--base-model", default="google/gemma-4-26b-it")
     parser.add_argument("--output-dir", default="checkpoints")
     parser.add_argument("--sft-data-dir", default="training/sft_data")
     parser.add_argument(

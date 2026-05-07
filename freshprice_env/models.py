@@ -1,6 +1,7 @@
 """Pydantic v2 models for structured observation, action, and reward types.
 
-Used by inference.py and task graders for type-safe data exchange.
+Used by the training loop, evaluator, and task graders for type-safe data
+exchange.
 """
 
 from __future__ import annotations

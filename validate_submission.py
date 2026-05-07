@@ -1,14 +1,21 @@
-"""Validate the QStorePrice submission against hackathon requirements.
+"""Validate the QStorePrice submission against The Gemma 4 Good Hackathon
+requirements.
+
+The hackathon mandates five deliverables attached to a single Kaggle
+Writeup (≤ 1500 words): a public 3-min YouTube video, a public code
+repository, a live demo, a media-gallery cover image. This script verifies
+the technical artefacts that back those deliverables.
 
 Checks (each prints PASS/FAIL on its own line):
 
-  1. openenv.yaml exists and has the canonical sections
+  1. openenv.yaml exists and has the canonical sections (powers the live demo Space)
   2. Required Python modules import cleanly
   3. FreshPriceEnv reset() works for every CurriculumScenario
   4. Server module imports (admin endpoints registered)
-  5. Static dashboard files present
-  6. SFT data generator produces a valid 6-section completion
-  7. Required env vars are set (warn-only)
+  5. Static dashboard files present (frontend of the live demo)
+  6. SFT data generator produces a valid 6-section Operating Brief completion
+  7. Required env vars are set (warn-only — HF_TOKEN is needed to download
+     gated Gemma 4 weights)
 
 Run:
     python validate_submission.py

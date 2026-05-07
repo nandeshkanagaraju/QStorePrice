@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 def run_baseline(
-    model_id: str = "Qwen/Qwen2.5-7B-Instruct",
+    model_id: str = "google/gemma-4-26b-it",
     scenarios: list[str] | None = None,
     episodes_per_scenario: int = 5,
     output_file: str = "eval/baseline_results.json",
@@ -160,7 +160,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
     parser = argparse.ArgumentParser(description="Run zero-shot baseline evaluation")
-    parser.add_argument("--model-id", default="Qwen/Qwen2.5-7B-Instruct")
+    parser.add_argument("--model-id", default="google/gemma-4-26b-it")
     parser.add_argument("--scenarios", nargs="+", default=None,
                         choices=[s.name for s in CurriculumScenario])
     parser.add_argument("--episodes", type=int, default=5)

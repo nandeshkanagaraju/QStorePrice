@@ -8,7 +8,7 @@
   },
   "trained_fixture": {
     "run_label": "Kaggle working_output.ipynb \u2014 greedy eval on SFT checkpoint",
-    "model_id": "Qwen/Qwen2.5-1.5B-Instruct @ checkpoints/sft_v1",
+    "model_id": "google/gemma-4-e4b-it @ checkpoints/sft_v1",
     "source": "Parsed from working_output.ipynb evaluation cells (STABLE_WEEK + CRISIS_WEEK, 2 seeds each).",
     "path": "eval/fixtures/kaggle_sft_eval_snapshot.json"
   },

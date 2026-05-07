@@ -8,7 +8,7 @@ A new developer joining this project should be able to read this file and unders
 
 Indian grocery dark stores and small online sellers waste 15-30% of their perishable inventory every week. Tomatoes expire unsold while demand surges for trending recipes. Farmer surplus arrives at the wrong time. Flash sales fire too late. The root cause is the same everywhere: pricing, procurement, and trend-detection decisions are made by gut instinct under time pressure, with no systematic way to learn from outcomes.
 
-QStorePrice AI trains a Qwen-2.5-7B language model via reinforcement learning to write **Operating Briefs** — structured 6-section decision documents that a deterministic rule executor converts into concrete actions. The LLM does language work (situation assessment, viability reasoning, confidence calibration). A rule executor reads the DIRECTIVE section and applies the numeric values. When RL training improves the model, the briefs get measurably better — a claim about language understanding improving that standard numeric-action RL cannot make. The seller can read every decision the AI makes in plain language.
+QStorePrice AI is the codebase behind our submission to **The Gemma 4 Good Hackathon** (Impact Track: Global Resilience, Special Tech Track: Unsloth). It trains a Gemma 4 language model — `google/gemma-4-e4b-it` on consumer GPUs, `google/gemma-4-26b-it` on A100-class hardware — via reinforcement learning to write **Operating Briefs**: structured 6-section decision documents that a deterministic rule executor converts into concrete actions. The LLM does language work (situation assessment, viability reasoning, confidence calibration). A rule executor reads the DIRECTIVE section and applies the numeric values. When RL training improves the model, the briefs get measurably better — a claim about language understanding improving that standard numeric-action RL cannot make. The seller can read every decision the AI makes in plain language. Gemma 4's native function-calling and grounded JSON behaviour are precisely why the DIRECTIVE block almost always parses on the first try.
 
 The system has three engines in v1: **Dynamic Pricing** (auto-discount items as they approach expiry), **Farmer Offer Engine** (accept/counter/decline surplus procurement with risk management), and **Social Trend Engine** (detect viral food signals on Instagram/YouTube, restock before demand arrives). All three engines contribute to a single unified metric: **Weekly Waste Recovery Rate (WRR)** = revenue recovered from at-risk inventory / cost of at-risk inventory. The training target is WRR from ~0.09 (zero-shot base model) to >= 0.70 (promotion threshold).
 
@@ -108,7 +108,7 @@ training/
                               rejected brief generation (Mode 1: template degradation, Mode 2:
                               20% chance LLM-based), episode-level regret analysis with 5
                               regret type classifications.
-  sft_trainer.py            — load_sft_dataset (merges 3 JSON files, Qwen chat template),
+  sft_trainer.py            — load_sft_dataset (merges 3 JSON files, Gemma 4 chat template),
                               run_sft (Unsloth 4-bit + LoRA r=16 + SFTTrainer + cosine LR),
                               _verify_checkpoint (load, generate, check 6 sections).
   grpo_trainer.py           — FreshPriceGRPOTrainer: generate() for inference (strips prompt
@@ -197,7 +197,7 @@ The SDD documents four additional engines for v2: Intra-Fleet Rebalancing, Micro
 
 ### Decision 5: GRPO over PPO
 
-We use GRPOTrainer from HuggingFace TRL instead of PPO. GRPO (Group Relative Policy Optimisation) is more sample-efficient for verifiable reward tasks where the reward function is known and deterministic. It does not require a value network, GAE computation, or a separate reward model. The official hackathon guide recommends GRPO for exactly this class of problem. The training loop is simpler: environment rollout, reward computation, gradient update. No critic, no KL penalty tuning.
+We use GRPOTrainer from HuggingFace TRL instead of PPO. GRPO (Group Relative Policy Optimisation) is more sample-efficient for verifiable reward tasks where the reward function is known and deterministic. It does not require a value network, GAE computation, or a separate reward model. GRPO is a natural fit for grounded-output models like Gemma 4 because the reward computation runs against the parsed DIRECTIVE block, not against a fragile reward model. The training loop is simpler: environment rollout, reward computation, gradient update. No critic, no KL penalty tuning.
 
 ### Decision 6: save_pretrained_merged, Never save_pretrained
 
@@ -496,7 +496,7 @@ Expected: GPU name (e.g., Tesla T4), ~15 GB VRAM, "Imports OK".
 
 ```python
 !python eval/baseline.py \
-  --model-id Qwen/Qwen2.5-7B-Instruct \
+  --model-id google/gemma-4-26b-it \
   --episodes 5 \
   --output eval/baseline_results.json
 ```
@@ -509,7 +509,7 @@ Time: ~30-60 min depending on GPU. Each episode is 84 LLM generations.
 
 ```python
 !python training/sft_trainer.py \
-  --model-id Qwen/Qwen2.5-7B-Instruct \
+  --model-id google/gemma-4-26b-it \
   --output-dir checkpoints/sft_v1 \
   --epochs 2 \
   --seed 42
@@ -709,7 +709,7 @@ else:
     print("Weak correlation: agent may be finding shortcuts")
 ```
 
-**Honest assessment**: This is one environment, one LLM family (Qwen-2.5), one reward function, and one quality scoring methodology. The finding is encouraging — it establishes a methodology for measuring reasoning-reward correlation in language agent training. Whether the finding generalises to other domains, models, and reward structures is why the environment should be extended, not replaced. The value of QStorePrice AI is not the specific correlation number — it is the infrastructure that makes the question testable.
+**Honest assessment**: This is one environment, one LLM family (Gemma 4), one reward function, and one quality scoring methodology. The finding is encouraging — it establishes a methodology for measuring reasoning-reward correlation in language agent training. Whether the finding generalises to other domains, models, and reward structures is why the environment should be extended, not replaced. The value of QStorePrice AI is not the specific correlation number — it is the infrastructure that makes the question testable.
 
 ---
 
@@ -725,6 +725,6 @@ else:
 - [ ] `requirements.txt` is Space-safe (no torch, no pinned versions that break Python 3.13)
 - [ ] `requirements_training.txt` has the full training stack
 - [ ] HuggingFace mini-blog posted (problem, brief example, before/after table, WRR chart)
-- [ ] Colab notebook committed as `training/QStorePrice_Training.ipynb`
+- [ ] Reproduction notebook committed as `kaggle_qstoreprice.ipynb`
 - [ ] All placeholder URLs in README replaced with real URLs
 - [ ] `DEVELOPER_GUIDE.md` committed (this file)

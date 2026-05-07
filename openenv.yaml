@@ -1,16 +1,20 @@
 # QStorePrice — OpenEnv environment manifest (compatible with openenv-core
-# >= 0.2.0). The hackathon ships against OpenEnv v0.2.3 (PDF page 2).
+# >= 0.2.0). OpenEnv is used here as the deployment / contract layer that
+# powers the Hugging Face Space hosting the live demo for our submission to
+# **The Gemma 4 Good Hackathon** (Impact Track: Global Resilience, Special
+# Technology Track: Unsloth).
 # Validated by `openenv push` and consumed by the Hugging Face Space build.
 
 name: qstoreprice
 version: "1.1.0"
 description: >
-  Perishable goods intelligence environment. An LLM writes structured
-  Operating Briefs every 2 simulated hours; a deterministic rule executor
-  converts the DIRECTIVE section into typed pricing/farmer/trend actions.
-  Episodes are 7 simulated days (672 ticks at 15-minute resolution).
-  Unified metric: Weekly Waste Recovery Rate (WRR) = revenue recovered
-  from at-risk inventory / cost of at-risk inventory.
+  Gemma-4-powered perishable goods intelligence environment. A Gemma 4
+  model writes structured Operating Briefs every 2 simulated hours; a
+  deterministic rule executor converts the DIRECTIVE section into typed
+  pricing/farmer/trend actions. Episodes are 7 simulated days (672 ticks
+  at 15-minute resolution). Unified metric: Weekly Waste Recovery Rate
+  (WRR) = revenue recovered from at-risk inventory / cost of at-risk
+  inventory. Submission for The Gemma 4 Good Hackathon.
 
 author: "QStorePrice Team"
 license: MIT
@@ -18,15 +22,17 @@ homepage: "https://github.com/nandeshkanagaraju/QStorePrice"
 
 # OpenEnv server: FastAPI app produced by core.env_server.create_fastapi_app.
 # Endpoints exposed: GET /health, POST /reset, POST /step, GET /state, WS /ws,
-# GET /docs, GET /web (PDF page 41).
+# GET /docs, GET /web — the canonical OpenEnv HTTP/WebSocket contract.
 type: space
 runtime: fastapi
 app: server.app:app
 port: 8000
 
-# Typed action / observation / state classes (PDF page 28 "Type-Safe by
-# Design"). These are re-exported at top-level by ``models.py`` so clients
-# import them via ``from models import BriefAction, ...``.
+# Typed action / observation / state classes (OpenEnv "Type-Safe by Design"
+# pattern — define data structures with Python dataclasses and have the
+# server validate every payload against them). These are re-exported at
+# top-level by ``models.py`` so clients import them via
+# ``from models import BriefAction, ...``.
 environment:
   class: freshprice_env.openenv_adapter.FreshPriceOpenEnv
   entry_point: freshprice_env.openenv_adapter:FreshPriceOpenEnv
@@ -56,8 +62,9 @@ action_space:
     VIABILITY CHECK, RECOMMENDATION, DIRECTIVE (JSON), CONFIDENCE.
 
 # Reward is a per-brief delta of WRR with rich component breakdown (r1, r2,
-# r3) plus a brief-quality scorer that is independent of WRR. This satisfies
-# the hackathon "rich, informative signal" guideline (PDF page 14).
+# r3) plus a brief-quality scorer that is independent of WRR — a rich,
+# informative reward signal that supports both SFT warm-start and DPO/GRPO
+# fine-tuning of the Gemma 4 policy.
 reward:
   type: float
   range: [-inf, 1.0]
@@ -102,6 +109,11 @@ curriculum:
   promotion_window: 5
 
 tags:
+  - gemma-4
+  - gemma-4-good-hackathon
+  - global-resilience
+  - food-waste
+  - unsloth
   - perishable-goods
   - quick-commerce
   - multi-engine

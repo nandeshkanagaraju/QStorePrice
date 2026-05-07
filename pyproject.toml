@@ -5,12 +5,17 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "qstoreprice-env"
 version = "1.1.0"
-description = "QStorePrice: Perishable goods intelligence environment for OpenEnv. An LLM writes Operating Briefs that drive pricing, farmer offer, and trend engines for a quick-commerce grocery store. Unified metric: Weekly Waste Recovery Rate (WRR)."
+description = "QStorePrice: Gemma-4-powered perishable-goods intelligence agent — submission for The Gemma 4 Good Hackathon (Impact: Global Resilience, Special Tech: Unsloth). A Gemma 4 model writes Operating Briefs that drive pricing, farmer offer, and trend engines for a quick-commerce grocery store. Unified metric: Weekly Waste Recovery Rate (WRR)."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "QStorePrice Team" }]
 keywords = [
+    "gemma-4",
+    "gemma-4-good-hackathon",
+    "global-resilience",
+    "food-waste",
+    "unsloth",
     "openenv",
     "reinforcement-learning",
     "llm",

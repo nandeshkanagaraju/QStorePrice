@@ -1,7 +1,8 @@
 """FastAPI server for the QStorePrice OpenEnv environment.
 
-Exposes the canonical OpenEnv HTTP/WebSocket endpoints required by the
-hackathon (PDF page 41):
+OpenEnv is used as the deployment / contract layer for the Hugging Face
+Space that hosts the live demo of our Gemma 4 Good Hackathon submission.
+Exposes the canonical OpenEnv HTTP/WebSocket endpoints:
 
     GET  /health   - liveness probe
     POST /reset    - start a new episode

@@ -17,7 +17,9 @@
 
 **Unified metric:** Weekly Waste Recovery Rate (WRR) = revenue from at-risk inventory / cost of at-risk inventory. Target: 61% → 89%.
 
-**Stack:** FastAPI (Python 3.11) · PostgreSQL · Redis · Celery · SQLAlchemy Core · Next.js 14 · TypeScript · Supabase · HuggingFace TRL · Unsloth
+**Stack:** FastAPI (Python 3.11) · PostgreSQL · Redis · Celery · SQLAlchemy Core · Next.js 14 · TypeScript · Supabase · HuggingFace TRL · Unsloth · **Gemma 4** (`google/gemma-4-e4b-it` for edge / dark-store devices, `google/gemma-4-26b-it` for cloud training)
+
+**Hackathon:** Submitted to *The Gemma 4 Good Hackathon* — Impact Track: **Global Resilience**, Special Tech Track: **Unsloth**.
 
 ---
 
@@ -189,7 +191,7 @@ class Settings(BaseSettings):
 
     # LLM
     hf_api_key: str
-    hf_model_id: str = "Qwen/Qwen2.5-7B-Instruct"
+    hf_model_id: str = "google/gemma-4-26b-it"
     llm_timeout_seconds: int = 40
     llm_max_retries: int = 3
 

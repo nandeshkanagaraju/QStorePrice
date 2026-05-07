@@ -17,11 +17,15 @@ from freshprice_env.brief_pipeline.prompt_builder import OperatingBriefPromptBui
 
 logger = logging.getLogger(__name__)
 
-# Chat template tokens for Qwen-2.5-Instruct
-_SYSTEM_TAG = "<|im_start|>system"
-_USER_TAG = "<|im_start|>user"
-_ASSISTANT_TAG = "<|im_start|>assistant"
-_END_TAG = "<|im_end|>"
+# Chat template tokens for Gemma-4 instruct models.
+# Gemma-4 has no native system role; the system prompt is folded into the
+# first user turn (the same approach Gemma's tokenizer.apply_chat_template
+# uses). The tags below are used to assemble training-time strings; for
+# inference we recommend `tokenizer.apply_chat_template(...)` directly.
+_SYSTEM_TAG = "<start_of_turn>user"  # system content is prepended to user turn
+_USER_TAG = "<start_of_turn>user"
+_ASSISTANT_TAG = "<start_of_turn>model"
+_END_TAG = "<end_of_turn>"
 
 # Required section headers that must appear in a valid brief
 _REQUIRED_SECTIONS = ["SITUATION:", "SIGNAL ANALYSIS:", "VIABILITY CHECK:",
@@ -73,12 +77,13 @@ def load_sft_dataset(data_dir: str = "training/sft_data") -> Dataset:
     if not all_examples:
         raise FileNotFoundError(f"No SFT data found in {data_dir}")
 
-    # Format for SFTTrainer
+    # Format for SFTTrainer.
+    # Gemma 4 has no dedicated system role — the system prompt is folded into
+    # the first user turn so the model sees a single, well-formed conversation.
     formatted: list[dict] = []
     for ex in all_examples:
         text = (
-            f"{_SYSTEM_TAG}\n{system_prompt}{_END_TAG}\n"
-            f"{_USER_TAG}\n{ex['prompt']}{_END_TAG}\n"
+            f"{_USER_TAG}\n{system_prompt}\n\n{ex['prompt']}{_END_TAG}\n"
             f"{_ASSISTANT_TAG}\n{ex['completion']}{_END_TAG}"
         )
         formatted.append({
@@ -110,7 +115,7 @@ def load_sft_dataset(data_dir: str = "training/sft_data") -> Dataset:
 
 
 def run_sft(
-    model_id: str = "Qwen/Qwen2.5-7B-Instruct",
+    model_id: str = "google/gemma-4-26b-it",
     output_dir: str = "checkpoints/sft_v1",
     data_dir: str = "training/sft_data",
     num_epochs: int = 2,
@@ -224,8 +229,7 @@ def _verify_checkpoint(
 
         system_prompt = OperatingBriefPromptBuilder.SYSTEM_PROMPT
         full_prompt = (
-            f"{_SYSTEM_TAG}\n{system_prompt}{_END_TAG}\n"
-            f"{_USER_TAG}\n{_VERIFICATION_PROMPT}{_END_TAG}\n"
+            f"{_USER_TAG}\n{system_prompt}\n\n{_VERIFICATION_PROMPT}{_END_TAG}\n"
             f"{_ASSISTANT_TAG}\n"
         )
 
@@ -264,7 +268,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
     parser = argparse.ArgumentParser(description="Run SFT warm-start training")
-    parser.add_argument("--model-id", default="Qwen/Qwen2.5-7B-Instruct")
+    parser.add_argument("--model-id", default="google/gemma-4-26b-it")
     parser.add_argument("--output-dir", default="checkpoints/sft_v1")
     parser.add_argument("--data-dir", default="training/sft_data")
     parser.add_argument("--epochs", type=int, default=2)

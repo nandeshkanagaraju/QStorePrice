@@ -1,5 +1,8 @@
 """Smoke test: confirm FreshPriceOpenEnv conforms to the OpenEnv contract.
 
+OpenEnv is the deployment / contract layer for the live demo backing the
+Gemma 4 Good Hackathon submission — this script keeps that contract honest.
+
 Run (from repository root):
     pip install -e .
     pip install openenv-core

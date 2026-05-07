@@ -1,9 +1,10 @@
 """OpenEnv adapter for FreshPriceEnv.
 
-The hackathon judging criteria mandate "Usage of OpenEnv (latest release)".
-The internal env (`FreshPriceEnv`) is a Gymnasium-style env so that `app.py`,
-`inference.py`, the training pipeline, and the evaluator keep working as-is.
-This module wraps it in the OpenEnv `Environment[Action, Observation, State]`
+OpenEnv is the deployment / contract layer that backs the live demo
+Hugging Face Space for our Gemma 4 Good Hackathon submission. The
+internal env (`FreshPriceEnv`) is a Gymnasium-style env so that `app.py`,
+the training pipeline, and the evaluator keep working as-is. This module
+wraps it in the OpenEnv `Environment[Action, Observation, State]`
 contract without duplicating logic.
 
 Install:
